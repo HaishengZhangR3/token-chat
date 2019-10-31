@@ -99,9 +99,9 @@ class ChatController(rpc: NodeRPCConnection) {
             ChatService.api(proxy).getChatParticipants(toID(id)).map { it.name.organisation }.toString()
 
     private fun chatInfoParser(infos: List<ChatMessage>): String {
-        val activeChatIDs = ChatService.api(proxy).getActiveChatIDs()
+        val activeChatIDs = ChatService.api(proxy).getActiveChatIDs().map { it.id.toString() }
         val newInfos = infos.map {
-            if (!activeChatIDs.contains(it.linearId)) {
+            if (!activeChatIDs.contains(it.token.tokenIdentifier)) {
                 ChatMessageData.fromState(it, ChatStatus.CLOSED)
             } else {
                 ChatMessageData.fromState(it, ChatStatus.ACTIVE)

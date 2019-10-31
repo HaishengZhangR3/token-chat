@@ -51,6 +51,12 @@ dependencies {
         changing = true
     }
 
+    cordapp "$tokens_release_group:tokens-contracts:$tokens_release_version"
+    cordapp "$tokens_release_group:tokens-workflows:$tokens_release_version"
+    cordapp "$tokens_release_group:tokens-selection:$tokens_release_version"
+    cordapp "$tokens_release_group:tokens-money:$tokens_release_version"
+    cordapp "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
+
     // Testing.
     testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"

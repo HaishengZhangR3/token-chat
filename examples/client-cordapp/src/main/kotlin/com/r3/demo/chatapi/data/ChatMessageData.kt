@@ -19,7 +19,7 @@ data class ChatMessageData(
     companion object {
         fun fromState(chatMessageState: ChatMessage, status: ChatStatus = ChatStatus.ACTIVE): ChatMessageData =
                 ChatMessageData(
-                        chatId = chatMessageState.linearId,
+                        chatId = UniqueIdentifier.fromString(chatMessageState.token.tokenIdentifier),
                         participants = chatMessageState.participants.map { it.nameOrNull()!!.organisation },
                         created = chatMessageState.created,
                         content = chatMessageState.content,

@@ -28,7 +28,6 @@ dependencies {
     // Corda dependencies.
     cordaCompile "$corda_release_group:corda-core:$corda_release_version"
 
-    // Accounts dependencies.
     cordaCompile project(":contracts")
     cordaCompile project(":workflows")
 }
