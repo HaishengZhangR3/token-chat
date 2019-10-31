@@ -1,6 +1,5 @@
 package com.r3.corda.lib.chat.workflows.flows.utils
 
-import com.r3.corda.lib.chat.contracts.internal.schemas.PersistentChatMessage
 import com.r3.corda.lib.chat.contracts.internal.schemas.PersistentChatMetaInfo
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
@@ -44,24 +43,23 @@ class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToke
             ).states
 
     /* get chat level message information */
-    private fun getChatMessages(chatId: UniqueIdentifier, status: StateStatus = StateStatus.UNCONSUMED): List<StateAndRef<ChatMessage>> {
-        val criterial = QueryCriteria.VaultQueryCriteria(status = status)
-                .and(builder {
-                    QueryCriteria.VaultCustomQueryCriteria(PersistentChatMessage::identifier.equal(chatId.id))
-                })
-        val stateAndRefs = serviceHub.vaultService.queryBy<ChatMessage>(
-                criteria = criterial)
-        return stateAndRefs.states
+    fun getChatAllMessagesByChatId(chatId: UniqueIdentifier): List<StateAndRef<ChatMessage>>  {
+        val allMessages = getAllMessages(StateStatus.ALL)
+        return allMessages.filter { it.state.data.token.tokenIdentifier.equals(chatId.id.toString()) }
     }
-    fun getChatAllMessages(chatId: UniqueIdentifier) = getChatMessages(chatId, StateStatus.ALL)
-    fun getChatActiveMessages(chatId: UniqueIdentifier) = getChatMessages(chatId)
+    fun getChatActiveMessagesByChatId(chatId: UniqueIdentifier): List<StateAndRef<ChatMessage>>  {
+        val allMessages = getAllMessages(StateStatus.UNCONSUMED)
+        return allMessages.filter { it.state.data.token.tokenIdentifier.equals(chatId.id.toString()) }
+    }
 
-    /* get chat level meta data information */
+
     inline fun <reified T : LinearState> getVaultStates(chatId: UniqueIdentifier, status: StateStatus = StateStatus.UNCONSUMED): List<StateAndRef<T>> {
         val stateAndRefs = serviceHub.vaultService.queryBy<T>(
                 criteria = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(chatId), status = status))
         return stateAndRefs.states
     }
+
+    /* get chat level meta data information */
     fun getMetaInfo(chatId: UniqueIdentifier): StateAndRef<ChatMetaInfo> = getVaultStates<ChatMetaInfo>(chatId).first()
     fun getActiveMetaInfo(chatId: UniqueIdentifier): StateAndRef<ChatMetaInfo> = getVaultStates<ChatMetaInfo>(chatId).first()
     fun getMetaInfoOrNull(chatId: UniqueIdentifier): StateAndRef<ChatMetaInfo>? = getVaultStates<ChatMetaInfo>(chatId).firstOrNull()

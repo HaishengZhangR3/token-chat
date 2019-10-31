@@ -1,8 +1,9 @@
-package com.r3.corda.lib.chat.workflows.test
+package com.r3.corda.lib.chat.workflows.test.internal
 
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.CreateMetaInfoFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -15,7 +16,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class CreateChatFlowTests {
+class CreateMetaInfoFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
@@ -49,34 +50,12 @@ class CreateChatFlowTests {
     @Test
     fun `should be possible to create a chat`() {
 
-        val chatFlow = nodeA.startFlow(CreateChatFlow(
+        val chatFlow = nodeA.startFlow(CreateMetaInfoFlow(
                 subject = "subject",
-                content = "content",
                 receivers = listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
-        val txn = chatFlow.getOrThrow()
-
-        // message level
-        val chatMessageA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states.single().state.data
-        val chatMessageB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states.single().state.data
-        Assert.assertTrue(chatMessageB.linearId == chatMessageA.linearId)
-        Assert.assertTrue(chatMessageB.content  == chatMessageA.content)
-
-        // message pointer (meta info) level
-        Assert.assertTrue(chatMessageB.token.tokenIdentifier == chatMessageA.token.tokenIdentifier)
-        Assert.assertTrue(chatMessageB.holder.owningKey != chatMessageA.holder.owningKey)
-
-
-        // same chat in two nodes should have diff participants
-        val msgPartiesA = chatMessageA.participants
-        val msgPartiesB = chatMessageB.participants
-        Assert.assertEquals(msgPartiesA.size, 1)
-        Assert.assertEquals(msgPartiesB.size, 1)
-
-        val msgPartyA = msgPartiesA.single()
-        val msgPartyB = msgPartiesB.single()
-        Assert.assertFalse(msgPartyA.nameOrNull().toString().equals(msgPartyB.nameOrNull().toString()))
+        chatFlow.getOrThrow()
 
         //check whether the created one in node B is same as that in the DB of host node A
         val chatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data

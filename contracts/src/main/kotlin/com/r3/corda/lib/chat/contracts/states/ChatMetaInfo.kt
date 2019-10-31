@@ -51,7 +51,7 @@ data class ChatMetaInfo(
     override val maintainers: List<Party>
         get() = listOf(admin)
     override val participants: List<AbstractParty>
-        get() = setOf(admin).toList()
+        get() = receivers + admin
     override val fractionDigits = 0
 
     override fun supportedSchemas(): Iterable<MappedSchema> = listOf(ChatMetaInfoSchema)

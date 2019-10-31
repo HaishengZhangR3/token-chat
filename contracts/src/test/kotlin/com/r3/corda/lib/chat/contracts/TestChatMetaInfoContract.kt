@@ -12,7 +12,6 @@ import org.junit.Test
 import java.time.Instant
 import java.util.*
 
-// @todo: add tests for contract and state
 class TestChatMetaInfoContract {
 
     class DummyCommand : TypeOnlyCommandData()

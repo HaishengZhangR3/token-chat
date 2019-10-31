@@ -139,10 +139,6 @@ class RemoveParticipantsFlowTests {
                         oldChatMetaA.subject, oldChatMetaB.subject, oldChatMetaC.subject).distinct().size,
                 1)
 
-        // created time must change
-        val newChatDate = chatMetaA.created
-        val oldChatDate = oldChatMetaA.created
-        Assert.assertTrue(oldChatDate < newChatDate)
 
         val admins = listOf(
                 chatMetaA.admin,

@@ -13,8 +13,6 @@ import net.corda.core.identity.Party
 import net.corda.core.node.services.Vault.*
 import net.corda.core.serialization.CordaSerializable
 
-// @todo: support page: PageSpecification
-
 @CordaSerializable
 sealed class ChatStatus {
     object ACTIVE : ChatStatus() {
@@ -58,7 +56,7 @@ class AllChats : FlowLogic<List<StateAndRef<ChatMessage>>>() {
 @StartableByRPC
 class ChatAllMessages(private val chatId: UniqueIdentifier) : FlowLogic<List<StateAndRef<ChatMessage>>>() {
     @Suspendable
-    override fun call(): List<StateAndRef<ChatMessage>> = chatVaultService.getChatAllMessages(chatId)
+    override fun call(): List<StateAndRef<ChatMessage>> = chatVaultService.getChatAllMessagesByChatId(chatId)
 }
 
 // get chat status: active, close proposed, closed

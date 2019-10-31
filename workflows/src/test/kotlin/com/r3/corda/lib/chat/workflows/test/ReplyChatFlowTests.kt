@@ -25,15 +25,15 @@ class ReplyChatFlowTests {
     @Before
     fun setup() {
         network = MockNetwork(
-            MockNetworkParameters(
-                networkParameters = testNetworkParameters(minimumPlatformVersion = 4),
-                cordappsForAllNodes = listOf(
-                        TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
-                        TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
-                        TestCordapp.findCordapp("com.r3.corda.lib.chat.contracts"),
-                        TestCordapp.findCordapp("com.r3.corda.lib.chat.workflows")
+                MockNetworkParameters(
+                        networkParameters = testNetworkParameters(minimumPlatformVersion = 4),
+                        cordappsForAllNodes = listOf(
+                                TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
+                                TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
+                                TestCordapp.findCordapp("com.r3.corda.lib.chat.contracts"),
+                                TestCordapp.findCordapp("com.r3.corda.lib.chat.workflows")
+                        )
                 )
-            )
         )
         nodeA = network.createPartyNode()
         nodeB = network.createPartyNode()
@@ -62,6 +62,12 @@ class ReplyChatFlowTests {
 
         val newChatMetaInfoA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
         val newChatMetaInfoB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val newMessageA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states
+        val newMessageB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states
+
+        val messageA = newMessageA.single().state.data
+        val messageB = newMessageB.single().state.data
+
 
         // 2 reply the chat
         val replyFlow = nodeB.startFlow(
@@ -75,8 +81,9 @@ class ReplyChatFlowTests {
         val chatMessageStateRef = replyFlow.getOrThrow()
         val replyChatMessage = chatMessageStateRef.state.data
 
-        // the reply chat id === thread id
-        Assert.assertTrue(replyChatMessage.linearId == newChatMetaInfoB.linearId)
+        // the reply message id != old message id
+        Assert.assertTrue(replyChatMessage.linearId != messageA.linearId)
+        Assert.assertTrue(replyChatMessage.linearId != messageB.linearId)
 
         // there are one chat meta on ledge in each node
         val replyChatMetaStateRefA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
@@ -107,86 +114,28 @@ class ReplyChatFlowTests {
         Assert.assertTrue(newChatMsgDate < replyChatMsgDate)
 
         // all of them have same id
-        Assert.assertEquals(listOf(newChatInfo.linearId,
+        Assert.assertEquals(listOf(
                 newChatMetaInfoA.linearId,
-                newChatMetaInfoB.linearId,
-                replyChatMessage.linearId,
-                replyChatMetaA.linearId,
-                replyChatMetaB.linearId,
-                chatMessageA.linearId,
-                chatMessageB.linearId
-                ).toSet().size,
+                newChatMetaInfoB.linearId
+        ).toSet().size,
                 1)
 
+        Assert.assertEquals(listOf(
+                chatMessageA.token.tokenType.tokenIdentifier,
+                chatMessageB.token.tokenType.tokenIdentifier
+
+        ).toSet().size,
+                1)
 
         // same chat in two nodes should have diff participants
         val participantsA = chatMessageA.participants
         val participantsB = chatMessageB.participants
-        Assert.assertEquals(participantsA.size,1)
-        Assert.assertEquals(participantsB.size,1)
+        Assert.assertEquals(participantsA.size, 1)
+        Assert.assertEquals(participantsB.size, 1)
 
         val participantA = participantsA.single()
         val participantB = participantsB.single()
         Assert.assertFalse(participantA.nameOrNull().toString().equals(participantB.nameOrNull().toString()))
-    }
-
-    @Test
-    fun `reply chat should follow constrains`() {
-
-        // 1 create one
-        val newChatFlow = nodeA.startFlow(CreateChatFlow(
-                subject = "subject",
-                content = "content",
-                receivers = listOf(nodeB.info.legalIdentities.single())
-        ))
-        network.runNetwork()
-        newChatFlow.getOrThrow()
-
-        val newChatMetaInfoA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val newChatMetaInfoB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-
-        // 2 reply the chat
-        val replyFlow = nodeB.startFlow(
-                ReplyChatFlow(
-                        content = "reply content",
-                        chatId = newChatMetaInfoA.linearId
-                )
-        )
-
-        network.runNetwork()
-        replyFlow.getOrThrow()
-
-        val replyChatMetaStateRefA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val replyChatMetaStateRefB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-
-        val replyChatMetaA = replyChatMetaStateRefA.single().state.data
-        val replyChatMetaB = replyChatMetaStateRefB.single().state.data
-
-        val chatMessageStateRefA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states
-        val chatMessageStateRefB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states
-
-        val replyChatMessageA = chatMessageStateRefA.sortedByDescending { it.state.data.created }.first().state.data
-        val replyChatMessageB = chatMessageStateRefB.sortedByDescending { it.state.data.created }.first().state.data
-
-        // the following tests are based on "state machine" constrains
-        // chatId must exist
-        Assert.assertEquals(listOf(
-                newChatMetaInfoA.linearId,
-                newChatMetaInfoB.linearId,
-                replyChatMetaA.linearId,
-                replyChatMetaB.linearId,
-                replyChatMessageA.linearId,
-                replyChatMessageB.linearId
-        ).toSet().size, 1)
-
-        // replier must be in existing participants
-        Assert.assertTrue(replyChatMetaA.receivers.contains(nodeB.info.legalIdentities.single()))
-        Assert.assertTrue(replyChatMetaB.receivers.contains(nodeB.info.legalIdentities.single()))
-
-        //  sender must be the reply initiator
-        Assert.assertTrue(replyChatMessageA.sender.equals(nodeB.info.legalIdentities.single()))
-        Assert.assertTrue(replyChatMessageB.sender.equals(nodeB.info.legalIdentities.single()))
-
     }
 
 }

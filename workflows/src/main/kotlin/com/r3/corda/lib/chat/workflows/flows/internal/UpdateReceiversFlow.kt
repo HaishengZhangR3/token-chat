@@ -3,10 +3,11 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.observer.AddParticipantsCommand
-import com.r3.corda.lib.chat.workflows.flows.observer.NotifyCommand
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
+import com.r3.corda.lib.chat.workflows.flows.observer.NotifyCommand
 import com.r3.corda.lib.chat.workflows.flows.observer.RemoveParticipantsCommand
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
+import com.r3.corda.lib.tokens.workflows.flows.rpc.UpdateEvolvableToken
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
@@ -25,15 +26,16 @@ class UpdateReceiversFlow(
     @Suspendable
     override fun call(): StateAndRef<ChatMetaInfo> {
 
-        val metaInfo = chatVaultService.getMetaInfo(chatId).state.data
+        val metaInfoStateRef = chatVaultService.getMetaInfo(chatId)
+        val metaInfo = metaInfoStateRef.state.data
 
-        // steps:
-        // 1. close current ChatMetaInfo, need (all) sign
-        subFlow(CloseMetaInfoFlow(chatId))
-
-        // 2. create new ChatMetaInfo, with new added but without removed parties, need (all + added - removed) sign
         val newReceivers = metaInfo.receivers + toAdd - toRemove
-        val newMetaStateRef = subFlow(CreateMetaInfoFlow(chatId, metaInfo.subject, newReceivers))
+        val newMetaInfo = metaInfo.copy(
+                receivers = newReceivers
+        )
+
+        val signedTxn = subFlow(UpdateEvolvableToken(metaInfoStateRef, newMetaInfo))
+        val newMetaStateRef = signedTxn.coreTransaction.outRefsOfType<ChatMetaInfo>().single()
 
         // tell all participants to notify
         (metaInfo.receivers + metaInfo.admin + toAdd).map { initiateFlow(it).send(listOf(

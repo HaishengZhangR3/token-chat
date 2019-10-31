@@ -1,10 +1,14 @@
-package com.r3.corda.lib.chat.workflows.test
+package com.r3.corda.lib.chat.workflows.test.internal
 
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.workflows.flows.AddParticipantsFlow
 import com.r3.corda.lib.chat.workflows.flows.CloseChatFlow
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
 import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.CloseMetaInfoFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.CreateMetaInfoFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.UpdateReceiversFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -17,7 +21,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class CloseChatFlowTests {
+class CloseMetaInfoFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
@@ -54,9 +58,8 @@ class CloseChatFlowTests {
     fun `should be possible to close a chat`() {
 
         // 1 create one
-        val newChatFlow = nodeA.startFlow(CreateChatFlow(
+        val newChatFlow = nodeA.startFlow(CreateMetaInfoFlow(
                 subject = "subject",
-                content = "content",
                 receivers = listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
@@ -65,47 +68,37 @@ class CloseChatFlowTests {
         val newChatMetaInfoA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
         val newChatMetaInfoB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
 
-        val newMessageB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states.single().state.data
-
-        // 2 reply the chat
-        val replyFlow = nodeA.startFlow(
-                ReplyChatFlow(
-                        content = "reply content",
+        // 2 add receivers
+        val addParticipantsFlow = nodeA.startFlow(
+                UpdateReceiversFlow(
+                        toAdd = listOf(nodeC.info.legalIdentities.single()),
                         chatId = newChatMetaInfoA.linearId
                 )
         )
 
         network.runNetwork()
-        replyFlow.getOrThrow()
+        addParticipantsFlow.getOrThrow()
+
+        val addedMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val addedMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val addedMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
 
         // 3. close chat
         val closeFlow = nodeA.startFlow(
-                CloseChatFlow(
+                CloseMetaInfoFlow(
                         chatId = newChatMetaInfoA.linearId
                 )
         )
         network.runNetwork()
         closeFlow.getOrThrow()
 
-
         // there are 0 chat on ledge in each node
-        val chatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val chatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val chatMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val closedMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val closedMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val closedMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states
 
-        val chatMessagesA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states
-        val chatMessagesB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states
-        val chatMessagesC = nodeC.services.vaultService.queryBy(ChatMessage::class.java).states
-
-        
-        Assert.assertTrue(chatMetaA.isEmpty())
-        Assert.assertTrue(chatMetaB.isEmpty())
-        Assert.assertTrue(chatMetaC.isEmpty())
-
-
-        Assert.assertTrue(chatMessagesA.isEmpty())
-        Assert.assertTrue(chatMessagesB.isEmpty())
-        Assert.assertTrue(chatMessagesC.isEmpty())
-
+        Assert.assertTrue(closedMetaA.isEmpty())
+        Assert.assertTrue(closedMetaB.isEmpty())
+        Assert.assertTrue(closedMetaC.isEmpty())
     }
 }

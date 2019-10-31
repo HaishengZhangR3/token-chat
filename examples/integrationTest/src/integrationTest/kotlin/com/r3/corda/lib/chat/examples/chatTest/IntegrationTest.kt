@@ -25,8 +25,6 @@ import org.junit.Assert
 import org.junit.Test
 
 
-// @todo: add remove participants cases
-// @todo: add attachment test cases
 class IntegrationTest {
 
     companion object {
@@ -206,7 +204,6 @@ class IntegrationTest {
             Assert.assertTrue(chatsInB.isNotEmpty())
             Assert.assertTrue(chatsInC.isNotEmpty())
 
-            // @todo: why 3? 1 new, 1 reply, 1 add participant. maybe need re-design
             Assert.assertTrue(chatsInA.size == 3)
             Assert.assertTrue(chatsInB.size == 3)
             Assert.assertTrue(chatsInC.size == 3)

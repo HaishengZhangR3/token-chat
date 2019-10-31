@@ -16,7 +16,6 @@ import org.junit.Test
 import java.time.Instant
 import java.util.*
 
-// @todo: add tests for contract and state
 class TestChatMessageContract {
 
     class DummyCommand : TypeOnlyCommandData()
@@ -46,7 +45,6 @@ class TestChatMessageContract {
                 holder = BOB.party
         )
 
-        // @TODO
         // MockServices only assume the version is 1, while reference is only supported in 4, so fails here
         ledgerServices.ledger {
             transaction {
