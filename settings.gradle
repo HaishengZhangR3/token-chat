@@ -1,0 +1,5 @@
+include 'contracts'
+include 'workflows'
+include 'examples:client-webserver'
+include 'examples:client-cordapp'
+include 'examples:integrationTest'
