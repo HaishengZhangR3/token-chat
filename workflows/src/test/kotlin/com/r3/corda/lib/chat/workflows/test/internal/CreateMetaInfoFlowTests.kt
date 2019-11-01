@@ -1,8 +1,6 @@
 package com.r3.corda.lib.chat.workflows.test.internal
 
-import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
-import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
 import com.r3.corda.lib.chat.workflows.flows.internal.CreateMetaInfoFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
@@ -62,7 +60,7 @@ class CreateMetaInfoFlowTests {
         val chatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
         Assert.assertTrue(chatMetaB.linearId == chatMetaA.linearId)
 
-        // same chat meta in two nodes should have same participants: admin itself
+        // same chat meta in two nodes should have same participants
         val metaPartiesA = chatMetaA.participants
         val metaPartiesB = chatMetaB.participants
         Assert.assertEquals(metaPartiesA.size, 2)
@@ -72,6 +70,4 @@ class CreateMetaInfoFlowTests {
         Assert.assertTrue(metaPartiesB.subtract(metaPartiesA).isEmpty())
 
     }
-
-
 }
