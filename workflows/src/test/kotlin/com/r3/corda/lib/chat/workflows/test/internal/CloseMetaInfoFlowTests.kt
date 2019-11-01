@@ -58,30 +58,23 @@ class CloseMetaInfoFlowTests {
                 receivers = listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
-        newChatFlow.getOrThrow()
-
-        val newChatMetaInfoA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val newChatMetaInfoB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val metaInfo = newChatFlow.getOrThrow().state.data
 
         // 2 add receivers
         val addParticipantsFlow = nodeA.startFlow(
                 UpdateReceiversFlow(
                         toAdd = listOf(nodeC.info.legalIdentities.single()),
-                        chatId = newChatMetaInfoA.linearId
+                        chatId = metaInfo.linearId
                 )
         )
 
         network.runNetwork()
         addParticipantsFlow.getOrThrow()
 
-        val addedMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val addedMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val addedMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-
         // 3. close chat
         val closeFlow = nodeA.startFlow(
                 CloseMetaInfoFlow(
-                        chatId = newChatMetaInfoA.linearId
+                        chatId = metaInfo.linearId
                 )
         )
         network.runNetwork()

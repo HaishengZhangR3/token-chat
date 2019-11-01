@@ -58,16 +58,18 @@ class UpdateReceiversFlowTests {
                 receivers = listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
-        newChatFlow.getOrThrow()
+        val chatInfo = newChatFlow.getOrThrow().state.data
 
-        val newChatMetaInfoA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val newChatMetaInfoB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val oldChatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val oldChatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        Assert.assertEquals(oldChatMetaB.receivers, oldChatMetaB.receivers)
+        Assert.assertTrue(oldChatMetaA.receivers.contains(nodeB.info.legalIdentities.single()))
 
-        // 2 send message to the chat
+        // add receivers to the chat
         val addParticipantsFlow = nodeA.startFlow(
                 UpdateReceiversFlow(
                         toAdd = listOf(nodeC.info.legalIdentities.single()),
-                        chatId = newChatMetaInfoA.linearId
+                        chatId = chatInfo.linearId
                 )
         )
 
@@ -77,12 +79,23 @@ class UpdateReceiversFlowTests {
         val addedMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
         val addedMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
         val addedMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        Assert.assertEquals(addedMetaA.receivers, addedMetaA.receivers)
+        Assert.assertEquals(addedMetaA.receivers, addedMetaA.receivers)
+        Assert.assertTrue(addedMetaA.receivers.contains(nodeB.info.legalIdentities.single()))
+        Assert.assertTrue(addedMetaA.receivers.contains(nodeC.info.legalIdentities.single()))
 
-        // 3 send message to the chat
+        // receivers list must change to new participants
+        val addResult = oldChatMetaA.receivers + nodeC.info.legalIdentities.single()
+        Assert.assertEquals((addedMetaC.receivers - addResult).size, 0)
+        Assert.assertEquals((addResult - addedMetaC.receivers).size, 0)
+        Assert.assertEquals(addedMetaA.receivers, addedMetaB.receivers)
+        Assert.assertEquals(addedMetaA.receivers, addedMetaC.receivers)
+
+        // remove receivers to the chat
         val removeParticipantsFlow = nodeA.startFlow(
                 UpdateReceiversFlow(
                         toRemove = listOf(nodeB.info.legalIdentities.single()),
-                        chatId = newChatMetaInfoA.linearId
+                        chatId = chatInfo.linearId
                 )
         )
 
@@ -93,11 +106,21 @@ class UpdateReceiversFlowTests {
         val removedMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
         val removedMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
         Assert.assertTrue(removedMetaB.isEmpty())
+        Assert.assertEquals(removedMetaA.receivers, removedMetaC.receivers)
+        Assert.assertTrue(removedMetaA.receivers.contains(nodeC.info.legalIdentities.single()))
+
+        val oldParticipants = addedMetaB.participants
+        val removeResult = oldParticipants - nodeB.info.legalIdentities.single()
+        val newParticipants = removedMetaA.participants
+
+        Assert.assertTrue(removeResult.size == newParticipants.size)
+        Assert.assertTrue((removeResult - newParticipants).isEmpty())
+        Assert.assertTrue((newParticipants - removeResult).isEmpty())
 
         // 4. close chat
         val closeFlow = nodeA.startFlow(
                 CloseMetaInfoFlow(
-                        chatId = newChatMetaInfoA.linearId
+                        chatId = chatInfo.linearId
                 )
         )
         network.runNetwork()

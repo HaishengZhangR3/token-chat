@@ -64,8 +64,6 @@ class SendMessageFlowTests {
 
         val newChatMetaInfoA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
         val newChatMetaInfoB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val newMessageA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states.single().state.data
-        val newMessageB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states.single().state.data
 
         // 2 send message to the chat
         val sendMessageFlow = nodeB.startFlow(

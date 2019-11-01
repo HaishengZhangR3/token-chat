@@ -73,26 +73,27 @@ class RemoveParticipantsFlowTests {
         network.runNetwork()
         removeParticipantsFlow.getOrThrow()
 
-        // chatinfo should not be consumed in A,B, and no one should be in C
-        val chatInfosInVaultA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val chatInfosInVaultB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val chatInfosInVaultC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        Assert.assertEquals(chatInfosInVaultA.size, 1)
-        Assert.assertEquals(chatInfosInVaultB.size, 1)
-        Assert.assertEquals(chatInfosInVaultC.size, 0)
+        // A and B should have meta info while C should not have
+        val metaStateRefA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val metaStateRefB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val metaStateRefC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        Assert.assertEquals(metaStateRefA.size, 1)
+        Assert.assertEquals(metaStateRefB.size, 1)
+        Assert.assertEquals(metaStateRefC.size, 0)
+
+        val metaA = metaStateRefA.single().state.data
+        val metaB = metaStateRefB.single().state.data
 
         val oldParticipants = chatInB.participants
         val expectedParticipants = oldParticipants - nodeC.info.legalIdentities.single()
-        val newParticipants = chatInfosInVaultA.single().state.data.participants
+        val newParticipants = metaA.participants
 
         Assert.assertTrue(expectedParticipants.size == newParticipants.size)
-        Assert.assertTrue((expectedParticipants - newParticipants).size == 0)
-        Assert.assertTrue((newParticipants - expectedParticipants).size == 0)
+        Assert.assertTrue((expectedParticipants - newParticipants).isEmpty())
+        Assert.assertTrue((newParticipants - expectedParticipants).isEmpty())
 
         Assert.assertEquals(
-                (chatInfosInVaultA.map { it.state.data.linearId }
-                        + chatInfosInVaultB.map { it.state.data.linearId })
-                        .distinct().size,
+                listOf(metaA.linearId, metaB.linearId).distinct().size,
                 1
         )
     }
@@ -124,7 +125,6 @@ class RemoveParticipantsFlowTests {
         network.runNetwork()
         removeParticipantsFlow.getOrThrow()
 
-        // chatinfo should not be consumed in A,B, and no one should be in C
         val chatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
         val chatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
 
@@ -139,7 +139,7 @@ class RemoveParticipantsFlowTests {
                         oldChatMetaA.subject, oldChatMetaB.subject, oldChatMetaC.subject).distinct().size,
                 1)
 
-
+        // admin must not change
         val admins = listOf(
                 chatMetaA.admin,
                 chatMetaB.admin,
@@ -147,8 +147,6 @@ class RemoveParticipantsFlowTests {
                 oldChatMetaB.admin,
                 oldChatMetaC.admin
         ).distinct()
-
-        // admin must not change
         Assert.assertEquals(admins.size, 1)
 
         // admin must be the initiator
