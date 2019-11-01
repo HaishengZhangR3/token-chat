@@ -1,11 +1,6 @@
 package com.r3.corda.lib.chat.workflows.test.internal
 
-import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
-import com.r3.corda.lib.chat.workflows.flows.AddParticipantsFlow
-import com.r3.corda.lib.chat.workflows.flows.CloseChatFlow
-import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
-import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
 import com.r3.corda.lib.chat.workflows.flows.internal.CloseMetaInfoFlow
 import com.r3.corda.lib.chat.workflows.flows.internal.CreateMetaInfoFlow
 import com.r3.corda.lib.chat.workflows.flows.internal.UpdateReceiversFlow
@@ -68,7 +63,7 @@ class UpdateReceiversFlowTests {
         val newChatMetaInfoA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
         val newChatMetaInfoB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
 
-        // 2 reply the chat
+        // 2 send message to the chat
         val addParticipantsFlow = nodeA.startFlow(
                 UpdateReceiversFlow(
                         toAdd = listOf(nodeC.info.legalIdentities.single()),
@@ -83,7 +78,7 @@ class UpdateReceiversFlowTests {
         val addedMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
         val addedMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
 
-        // 3 reply the chat
+        // 3 send message to the chat
         val removeParticipantsFlow = nodeA.startFlow(
                 UpdateReceiversFlow(
                         toRemove = listOf(nodeB.info.legalIdentities.single()),

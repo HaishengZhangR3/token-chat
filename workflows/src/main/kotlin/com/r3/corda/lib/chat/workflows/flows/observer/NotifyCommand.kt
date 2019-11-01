@@ -6,7 +6,7 @@ interface NotifyCommand : CommandData
 
 /* Command below are used to notify client application */
 class CreateCommand: NotifyCommand
-class ReplyCommand: NotifyCommand
+class SendMessageCommand: NotifyCommand
 class CloseCommand: NotifyCommand
 class AddParticipantsCommand : NotifyCommand
 class RemoveParticipantsCommand : NotifyCommand

@@ -43,7 +43,7 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
     private fun parseData(command: NotifyCommand, info: List<ContractState>): String =
             when (command) {
                 // is CreateMeta: don't care, will update customers only after ChatMessage created
-                is CreateCommand, is ReplyCommand -> {
+                is CreateCommand, is SendMessageCommand -> {
                     val message = info.single() as ChatMessage
                     chatMessageToJson(command, message)
                 }
@@ -74,7 +74,7 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
     private fun commandToString(command: NotifyCommand): String =
         when (command) {
             is  CreateCommand              -> "CreateCommand"
-            is  ReplyCommand               -> "ReplyCommand"
+            is  SendMessageCommand         -> "SendMessageCommand"
             is  CloseCommand               -> "CloseCommand"
             is  AddParticipantsCommand     -> "AddParticipantsCommand"
             is  RemoveParticipantsCommand  -> "RemoveParticipantsCommand"

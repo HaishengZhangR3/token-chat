@@ -4,7 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.workflows.flows.internal.CreateMessageFlow
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
-import com.r3.corda.lib.chat.workflows.flows.observer.ReplyCommand
+import com.r3.corda.lib.chat.workflows.flows.observer.SendMessageCommand
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
@@ -14,7 +14,7 @@ import net.corda.core.utilities.unwrap
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class ReplyChatFlow(
+class SendMessageFlow(
         private val chatId: UniqueIdentifier,
         private val content: String
 ) : FlowLogic<StateAndRef<ChatMessage>>() {
@@ -36,11 +36,11 @@ class ReplyChatFlow(
     }
 }
 
-@InitiatedBy(ReplyChatFlow::class)
-class ReplyChatFlowResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
+@InitiatedBy(SendMessageFlow::class)
+class SendMessageFlowResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val chatMessage = otherSession.receive<ChatMessage>().unwrap { it }
-        subFlow(ChatNotifyFlow(info = listOf(chatMessage), command = ReplyCommand()))
+        subFlow(ChatNotifyFlow(info = listOf(chatMessage), command = SendMessageCommand()))
     }
 }

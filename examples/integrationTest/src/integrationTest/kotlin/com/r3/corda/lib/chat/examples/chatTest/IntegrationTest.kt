@@ -5,7 +5,7 @@ import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.AddParticipantsFlow
 import com.r3.corda.lib.chat.workflows.flows.CloseChatFlow
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
-import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
+import com.r3.corda.lib.chat.workflows.flows.SendMessageFlow
 import com.r3.corda.lib.chat.workflows.flows.service.*
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
@@ -71,14 +71,14 @@ class IntegrationTest {
         return createChat.state.data
     }
 
-    private fun replyChat(who: NodeHandle, chatId: UniqueIdentifier, any: String): ChatMessage {
-        val replyChat = who.rpc.startFlow(
-                ::ReplyChatFlow,
+    private fun sendMessage(who: NodeHandle, chatId: UniqueIdentifier, any: String): ChatMessage {
+        val sendMessage = who.rpc.startFlow(
+                ::SendMessageFlow,
                 chatId,
                 "Some sample content replied $any"
         ).returnValue.getOrThrow()
 
-        return replyChat.state.data
+        return sendMessage.state.data
     }
 
     private fun closeChat(proposer: NodeHandle, chatId: UniqueIdentifier): Any {
@@ -147,7 +147,7 @@ class IntegrationTest {
     }
 
     @Test
-    fun `Corda Chat supports create, reply, close`() {
+    fun `Corda Chat supports create, send, close`() {
         driver(driverParameters) {
             log.warn("***** Chat integration test starting ....... *****")
             val (A, B, _) = nodeParams.map { params -> startNode(params) }.transpose().getOrThrow()
@@ -157,8 +157,8 @@ class IntegrationTest {
             val chatOnA = createChat(who = A, toList = listOf(B.legalIdentity()), any = "from A")
             log.warn("***** The chat created on A is: ${chatOnA.linearId} *****")
 
-            log.warn("***** Reply chat from B *****")
-            val chatOnB = replyChat(who = B, chatId = chatOnA.linearId, any = "from B")
+            log.warn("***** Send message from B *****")
+            val chatOnB = sendMessage(who = B, chatId = chatOnA.linearId, any = "from B")
             log.warn("***** The chat replied from B: ${chatOnB.linearId} *****")
 
             log.warn("*****  close from B *****")
@@ -189,8 +189,8 @@ class IntegrationTest {
             val chatOnA = createChat(who = A, toList = listOf(B.legalIdentity()), any = "from A")
             log.warn("***** The chat created on A is: ${chatOnA.linearId} *****")
 
-            log.warn("***** Reply chat from B *****")
-            val chatOnB = replyChat(who = B, chatId = chatOnA.linearId, any = "from B")
+            log.warn("***** Send message from B *****")
+            val chatOnB = sendMessage(who = B, chatId = chatOnA.linearId, any = "from B")
             log.warn("***** The chat replied from B: ${chatOnB.linearId} *****")
 
             log.warn("***** add participants from B *****")
@@ -226,7 +226,7 @@ class IntegrationTest {
             log.warn("***** All nodes started up *****")
 
             // 5X3: A -> (B, C); 5X3: B -> (B, C); so chats amount: A: 5X3, B: 5X3X2, C: 5X3X2
-            log.warn("***** Let's chat and reply for a while.... *****")
+            log.warn("***** Let's chat and send message for a while.... *****")
 
             val fromNodes = listOf(A, B)
             val toNodes = listOf(B, C)
@@ -266,14 +266,14 @@ class IntegrationTest {
 
                     toNodes.map {
                         val toNodeName = it.nodeInfo.legalIdentities.first().name
-                        log.warn("***** Reply chat from ${toNodeName} *****")
-                        val chatOnReply = replyChat(who = it, chatId = chatOnNode.linearId, any = "from ${toNodeName}")
+                        log.warn("***** Send message from ${toNodeName} *****")
+                        val chatOnReply = sendMessage(who = it, chatId = chatOnNode.linearId, any = "from ${toNodeName}")
 
                         (toList + node.nodeInfo.legalIdentities).distinct().map { party ->
                             howManyUniqueIdentifier[party]?.add(chatOnReply.linearId)
                         }
 
-                        log.warn("***** The chat replied: ${chatOnReply.linearId} *****")
+                        log.warn("***** The message send: ${chatOnReply.linearId} *****")
                     }
                 }
             }
@@ -343,8 +343,8 @@ class IntegrationTest {
             val chatOnA = createChat(who = A, toList = listOf(B.legalIdentity()), any = "from A")
             log.warn("***** The chat created on A is: ${chatOnA.linearId} *****")
 
-            log.warn("***** Reply chat from B *****")
-            val chatOnB = replyChat(who = B, chatId = chatOnA.linearId, any = "from B")
+            log.warn("***** Send message from B *****")
+            val chatOnB = sendMessage(who = B, chatId = chatOnA.linearId, any = "from B")
             log.warn("***** The chat ${chatOnB.linearId} is replied from B *****")
 
             log.warn("***** add participants from B *****")

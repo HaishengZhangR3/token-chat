@@ -71,7 +71,7 @@ function parseNotification(data){
   var message = JSON.parse(data);
   switch(message[0]){
     case "CreateCommand":
-    case "ReplyCommand":
+    case "SendMessageCommand":
       var chatMsg = message[1];
       chatLastUpdated = chatMsg.token.tokenIdentifier
       return '<B><font color="' + getColor(chatMsg.sender) + '">[' + chatMsg.sender + ']</font></B> ' + chatMsg.content

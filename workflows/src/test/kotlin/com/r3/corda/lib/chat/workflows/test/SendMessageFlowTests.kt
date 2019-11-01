@@ -3,7 +3,7 @@ package com.r3.corda.lib.chat.workflows.test
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
-import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
+import com.r3.corda.lib.chat.workflows.flows.SendMessageFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -16,7 +16,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class ReplyChatFlowTests {
+class SendMessageFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
@@ -48,7 +48,7 @@ class ReplyChatFlowTests {
     }
 
     @Test
-    fun `should be possible to reply a chat`() {
+    fun `should be possible to send message to a chat`() {
 
         // 1 create one
         val newChatFlow = nodeA.startFlow(CreateChatFlow(
@@ -69,35 +69,35 @@ class ReplyChatFlowTests {
         val messageB = newMessageB.single().state.data
 
 
-        // 2 reply the chat
-        val replyFlow = nodeB.startFlow(
-                ReplyChatFlow(
-                        content = "reply content",
+        // 2 send message to the chat
+        val sendMessageFlow = nodeB.startFlow(
+                SendMessageFlow(
+                        content = "reply content to a chat",
                         chatId = newChatMetaInfoA.linearId
                 )
         )
 
         network.runNetwork()
-        val chatMessageStateRef = replyFlow.getOrThrow()
-        val replyChatMessage = chatMessageStateRef.state.data
+        val chatMessageStateRef = sendMessageFlow.getOrThrow()
+        val sendMessage = chatMessageStateRef.state.data
 
-        // the reply message id != old message id
-        Assert.assertTrue(replyChatMessage.linearId != messageA.linearId)
-        Assert.assertTrue(replyChatMessage.linearId != messageB.linearId)
+        // the replied message id != old message id
+        Assert.assertTrue(sendMessage.linearId != messageA.linearId)
+        Assert.assertTrue(sendMessage.linearId != messageB.linearId)
 
         // there are one chat meta on ledge in each node
-        val replyChatMetaStateRefA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val replyChatMetaStateRefB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        Assert.assertTrue(replyChatMetaStateRefA.size == 1)
-        Assert.assertTrue(replyChatMetaStateRefB.size == 1)
+        val sendMessageMetaStateRefA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val sendMessageMetaStateRefB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        Assert.assertTrue(sendMessageMetaStateRefA.size == 1)
+        Assert.assertTrue(sendMessageMetaStateRefB.size == 1)
 
-        val replyChatMetaA = replyChatMetaStateRefA.single().state.data
-        val replyChatMetaB = replyChatMetaStateRefB.single().state.data
+        val sendMessageChatMetaA = sendMessageMetaStateRefA.single().state.data
+        val sendMessageChatMetaB = sendMessageMetaStateRefB.single().state.data
 
         // replied chat should be newer than created chat
         val newChatDate = newChatInfo.created
-        val replyChatMetaDate = replyChatMessage.created
-        Assert.assertTrue(newChatDate < replyChatMetaDate)
+        val sendMessageMetaDate = sendMessage.created
+        Assert.assertTrue(newChatDate < sendMessageMetaDate)
 
         // there are two chat messages on ledge in each node
         val chatMessageStateRefA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states
@@ -110,8 +110,8 @@ class ReplyChatFlowTests {
 
         // replied chat should be newer than created chat
         val newChatMsgDate = newChatInfo.created
-        val replyChatMsgDate = chatMessageA.created
-        Assert.assertTrue(newChatMsgDate < replyChatMsgDate)
+        val sendMessageMsgDate = chatMessageA.created
+        Assert.assertTrue(newChatMsgDate < sendMessageMsgDate)
 
         // all of them have same id
         Assert.assertEquals(listOf(

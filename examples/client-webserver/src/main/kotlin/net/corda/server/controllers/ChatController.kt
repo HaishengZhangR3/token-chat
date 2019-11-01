@@ -42,9 +42,9 @@ class ChatController(rpc: NodeRPCConnection) {
             ).toString()
 
     @PostMapping(value = ["/chat/{id}"], produces = [MediaType.TEXT_PLAIN_VALUE])
-    fun replyChat(@PathVariable("id") id: String,
+    fun sendMessage(@PathVariable("id") id: String,
                   @RequestBody chatMessage: APIChatMessage) =
-            ChatService.api(proxy).replyChat(
+            ChatService.api(proxy).sendMessage(
                     chatId = toID(id),
                     content = chatMessage.content
             ).toString()

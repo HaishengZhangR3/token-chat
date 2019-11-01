@@ -36,13 +36,13 @@ class ChatRPCWrapper() {
                 receivers
         ).returnValue.getOrThrow()
 
-    fun replyChat(chatId: UniqueIdentifier, content: String): ChatInfo =
-        val replyChat = proxy.startFlow(
-                ::ReplyChatFlow,
+    fun sendMessage(chatId: UniqueIdentifier, content: String): ChatInfo =
+        val sendMessage = proxy.startFlow(
+                ::SendMessageFlow,
                 chatId,
                 content
         ).returnValue.getOrThrow()
-        return replyChat.coreTransaction.outputStates.single() as ChatInfo
+        return sendMessage.coreTransaction.outputStates.single() as ChatInfo
     }
 
     fun getAllChats(): List<StateAndRef<ChatInfo>> =

@@ -4,7 +4,7 @@ import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.CloseChatFlow
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
-import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
+import com.r3.corda.lib.chat.workflows.flows.SendMessageFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -67,16 +67,16 @@ class CloseChatFlowTests {
 
         val newMessageB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states.single().state.data
 
-        // 2 reply the chat
-        val replyFlow = nodeA.startFlow(
-                ReplyChatFlow(
-                        content = "reply content",
+        // 2 send message to the chat
+        val sendMessageFlow = nodeA.startFlow(
+                SendMessageFlow(
+                        content = "reply content to a chat",
                         chatId = newChatMetaInfoA.linearId
                 )
         )
 
         network.runNetwork()
-        replyFlow.getOrThrow()
+        sendMessageFlow.getOrThrow()
 
         // 3. close chat
         val closeFlow = nodeA.startFlow(

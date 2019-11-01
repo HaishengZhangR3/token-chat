@@ -1,11 +1,6 @@
 package com.r3.corda.lib.chat.workflows.test.internal
 
-import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
-import com.r3.corda.lib.chat.workflows.flows.AddParticipantsFlow
-import com.r3.corda.lib.chat.workflows.flows.CloseChatFlow
-import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
-import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
 import com.r3.corda.lib.chat.workflows.flows.internal.CloseMetaInfoFlow
 import com.r3.corda.lib.chat.workflows.flows.internal.CreateMetaInfoFlow
 import com.r3.corda.lib.chat.workflows.flows.internal.UpdateReceiversFlow
