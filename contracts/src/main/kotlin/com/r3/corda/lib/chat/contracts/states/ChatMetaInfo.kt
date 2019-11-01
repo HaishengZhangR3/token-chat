@@ -48,10 +48,8 @@ data class ChatMetaInfo(
                     throw IllegalStateException("Cannot construct instance of ${this.javaClass} from Schema: $schema")
             }
 
-    override val maintainers: List<Party>
-        get() = listOf(admin)
-    override val participants: List<AbstractParty>
-        get() = receivers + admin
+    override val maintainers: List<Party> get() = listOf(admin)
+    override val participants: List<AbstractParty> get() = receivers + admin
     override val fractionDigits = 0
 
     override fun supportedSchemas(): Iterable<MappedSchema> = listOf(ChatMetaInfoSchema)

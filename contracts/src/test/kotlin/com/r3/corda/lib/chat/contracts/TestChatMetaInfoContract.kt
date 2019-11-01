@@ -4,6 +4,7 @@ import com.r3.corda.lib.chat.contracts.commands.CloseMeta
 import com.r3.corda.lib.chat.contracts.commands.CreateMeta
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.contracts.states.ChatStatus
+import com.r3.corda.lib.tokens.contracts.commands.Create
 import net.corda.core.contracts.TypeOnlyCommandData
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.testing.node.MockServices
@@ -33,7 +34,7 @@ class TestChatMetaInfoContract {
         ledgerServices.ledger {
             transaction {
                 output(ChatMetaInfoContract.CHAT_METAINFO_CONTRACT_ID, meta)
-                command(listOf(ALICE.publicKey), CreateMeta())
+                command(listOf(ALICE.publicKey), Create())
                 this.verifies()
             }
         }

@@ -25,11 +25,11 @@ class CreateMessageFlow(
         val metaInfo = chatVaultService.getMetaInfo(chatId).state.data
 
         val chatPointer = metaInfo.toPointer<ChatMetaInfo>()
-        val issuedTokenType = chatPointer issuedBy metaInfo.admin
+        val issuedTokenType = chatPointer issuedBy ourIdentity
 
         val allReceivers = metaInfo.receivers + metaInfo.admin
 
-        val messageId = randomID();
+        val messageId = randomID()
         val flows = allReceivers.map { receiver ->
             val message = ChatMessage(
                     token = issuedTokenType,

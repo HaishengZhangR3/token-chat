@@ -68,8 +68,8 @@ class WSServer : WebSocketServer {
     override fun onStart() {
 		logIt("${Instant.now()}: web socket started")
 
-		connectionLostTimeout = 0;
-		connectionLostTimeout = 100;
+		connectionLostTimeout = 0
+		connectionLostTimeout = 100
     }
 
     override fun onError(conn: WebSocket?, ex: Exception?) {

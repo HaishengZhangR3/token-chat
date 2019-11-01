@@ -1,12 +1,9 @@
 package com.r3.corda.lib.chat.contracts
 
 import com.r3.corda.lib.chat.contracts.commands.CreateMessage
-import com.r3.corda.lib.chat.contracts.states.CHAT_TOKEN_TYPE
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.contracts.states.ChatStatus
-import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
-import com.r3.corda.lib.tokens.contracts.types.TokenType
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import net.corda.core.contracts.TypeOnlyCommandData
 import net.corda.core.contracts.UniqueIdentifier
