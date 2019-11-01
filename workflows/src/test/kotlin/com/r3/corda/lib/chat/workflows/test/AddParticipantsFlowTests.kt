@@ -1,8 +1,8 @@
 package com.r3.corda.lib.chat.workflows.test
 
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.contracts.states.ChatSessionInfo
 import com.r3.corda.lib.chat.workflows.flows.AddParticipantsFlow
-import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import com.r3.corda.lib.chat.workflows.flows.CreateSessionFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -52,7 +52,7 @@ class AddParticipantsFlowTests {
     fun `should be possible to add participants to a chat`() {
 
         // 1 create one
-        val newChatFlow = nodeA.startFlow(CreateChatFlow(
+        val newChatFlow = nodeA.startFlow(CreateSessionFlow(
                 subject = "subject",
                 content = "content",
                 receivers = listOf(nodeB.info.legalIdentities.single())
@@ -60,38 +60,38 @@ class AddParticipantsFlowTests {
         network.runNetwork()
         newChatFlow.getOrThrow()
 
-        val oldChatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val oldChatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val oldSessionA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
+        val oldSessionB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
 
         // 2. add new participants
         val addParticipantsFlow = nodeA.startFlow(
                 AddParticipantsFlow(
                         toAdd = listOf(nodeC.info.legalIdentities.single()),
-                        chatId = oldChatMetaA.linearId
+                        chatId = oldSessionA.linearId
                 )
         )
 
         network.runNetwork()
         addParticipantsFlow.getOrThrow()
 
-        // old MetaInfo is consumed in A,B, and new one should be in A,B and C
-        val chatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val chatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val chatMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        // old SessionInfo is consumed in A,B, and new one should be in A,B and C
+        val sessionA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
+        val sessionB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
+        val sessionC = nodeC.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
 
         // make sure all of the receivers for all of the nodes are same
-        Assert.assertTrue((chatMetaA.receivers - chatMetaB.receivers).isEmpty())
-        Assert.assertTrue((chatMetaB.receivers - chatMetaA.receivers).isEmpty())
-        Assert.assertTrue((chatMetaB.receivers - chatMetaC.receivers).isEmpty())
-        Assert.assertTrue((chatMetaC.receivers - chatMetaB.receivers).isEmpty())
+        Assert.assertTrue((sessionA.receivers - sessionB.receivers).isEmpty())
+        Assert.assertTrue((sessionB.receivers - sessionA.receivers).isEmpty())
+        Assert.assertTrue((sessionB.receivers - sessionC.receivers).isEmpty())
+        Assert.assertTrue((sessionC.receivers - sessionB.receivers).isEmpty())
 
-        val expectedParticipants = oldChatMetaA.receivers + nodeC.info.legalIdentities.single()
-        Assert.assertTrue((chatMetaC.receivers - expectedParticipants).isEmpty())
-        Assert.assertTrue((expectedParticipants - chatMetaC.receivers).isEmpty())
+        val expectedParticipants = oldSessionA.receivers + nodeC.info.legalIdentities.single()
+        Assert.assertTrue((sessionC.receivers - expectedParticipants).isEmpty())
+        Assert.assertTrue((expectedParticipants - sessionC.receivers).isEmpty())
 
         Assert.assertEquals(
-                listOf(chatMetaA.linearId, chatMetaB.linearId, chatMetaC.linearId,
-                        oldChatMetaA.linearId, oldChatMetaB.linearId).distinct().size,
+                listOf(sessionA.linearId, sessionB.linearId, sessionC.linearId,
+                        oldSessionA.linearId, oldSessionB.linearId).distinct().size,
                 1)
     }
 
@@ -99,7 +99,7 @@ class AddParticipantsFlowTests {
     fun `add participants should follow constrain`() {
 
         // 1 create one
-        val newChatFlow = nodeA.startFlow(CreateChatFlow(
+        val newChatFlow = nodeA.startFlow(CreateSessionFlow(
                 subject = "subject",
                 content = "content",
                 receivers = listOf(nodeB.info.legalIdentities.single())
@@ -107,44 +107,44 @@ class AddParticipantsFlowTests {
         network.runNetwork()
         newChatFlow.getOrThrow()
 
-        val oldChatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val oldChatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val oldSessionA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
+        val oldSessionB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
 
         // 2. add new participants
         val addParticipantsFlow = nodeA.startFlow(
                 AddParticipantsFlow(
                         toAdd = listOf(nodeC.info.legalIdentities.single()),
-                        chatId = oldChatMetaA.linearId
+                        chatId = oldSessionA.linearId
                 )
         )
 
         network.runNetwork()
         addParticipantsFlow.getOrThrow()
 
-        // old MetaInfo is consumed in A,B, and new one should be in A,B and C
-        val chatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val chatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val chatMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        // old SessionInfo is consumed in A,B, and new one should be in A,B and C
+        val sessionA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
+        val sessionB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
+        val sessionC = nodeC.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
 
 
         // the following tests are based on "state machine" constrains
         // linearId and subject must not change
         Assert.assertEquals(
-                listOf(chatMetaA.linearId, chatMetaB.linearId, chatMetaC.linearId,
-                        oldChatMetaA.linearId, oldChatMetaB.linearId).distinct().size,
+                listOf(sessionA.linearId, sessionB.linearId, sessionC.linearId,
+                        oldSessionA.linearId, oldSessionB.linearId).distinct().size,
                 1)
         Assert.assertEquals(
-                listOf(chatMetaA.subject, chatMetaB.subject, chatMetaC.subject,
-                        oldChatMetaA.subject, oldChatMetaB.subject).distinct().size,
+                listOf(sessionA.subject, sessionB.subject, sessionC.subject,
+                        oldSessionA.subject, oldSessionB.subject).distinct().size,
                 1)
 
         // admin must not change
         val admins = listOf(
-                chatMetaA.admin,
-                chatMetaB.admin,
-                chatMetaC.admin,
-                oldChatMetaA.admin,
-                oldChatMetaB.admin
+                sessionA.admin,
+                sessionB.admin,
+                sessionC.admin,
+                oldSessionA.admin,
+                oldSessionB.admin
         ).distinct()
         Assert.assertEquals(admins.size, 1)
 
@@ -152,10 +152,10 @@ class AddParticipantsFlowTests {
         Assert.assertEquals(nodeA.info.legalIdentities.single(), admins.single())
 
         // receivers list must change to new participants
-        val expectedParticipants = oldChatMetaA.receivers + nodeC.info.legalIdentities.single()
-        Assert.assertEquals((chatMetaC.receivers - expectedParticipants).size, 0)
-        Assert.assertEquals((expectedParticipants - chatMetaC.receivers).size, 0)
-        Assert.assertEquals(chatMetaA.receivers, chatMetaB.receivers)
-        Assert.assertEquals(chatMetaA.receivers, chatMetaC.receivers)
+        val expectedParticipants = oldSessionA.receivers + nodeC.info.legalIdentities.single()
+        Assert.assertEquals((sessionC.receivers - expectedParticipants).size, 0)
+        Assert.assertEquals((expectedParticipants - sessionC.receivers).size, 0)
+        Assert.assertEquals(sessionA.receivers, sessionB.receivers)
+        Assert.assertEquals(sessionA.receivers, sessionC.receivers)
     }
 }

@@ -76,7 +76,7 @@ class ChatCurrentStatus(private val chatId: UniqueIdentifier) : FlowLogic<ChatSt
 class ChatParticipants(private val chatId: UniqueIdentifier) : FlowLogic<List<Party>>() {
     @Suspendable
     override fun call(): List<Party> {
-        val headMessage = chatVaultService.getMetaInfoOrNull(chatId)
+        val headMessage = chatVaultService.getSessionInfoOrNull(chatId)
         when (headMessage) {
             null -> return emptyList()
             else -> return headMessage.state.data.let { it.receivers + it.admin }.distinct()

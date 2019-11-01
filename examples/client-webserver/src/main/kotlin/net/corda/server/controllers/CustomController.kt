@@ -1,7 +1,7 @@
 package net.corda.server.controllers
 
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
-import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import com.r3.corda.lib.chat.workflows.flows.CreateSessionFlow
 import net.corda.core.identity.Party
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
@@ -33,7 +33,7 @@ class CustomController(rpc: NodeRPCConnection) {
 
     private fun createChat( toList: List<Party>, any: String): ChatMessage {
         val createChat = rpcOps.startFlow(
-                ::CreateChatFlow,
+                ::CreateSessionFlow,
                 "Sample Topic $any",
                 "Some sample content created $any",
                 toList

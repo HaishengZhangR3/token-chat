@@ -22,11 +22,11 @@ class CloseMessagesFlow(
     override fun call(): SignedTransaction  {
 
         // get and consume all messages in vault
-        val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
+        val sessionStateAndRef = chatVaultService.getSessionInfo(chatId)
         val messagesStateRef = chatVaultService.getChatActiveMessagesByChatId(chatId)
         requireThat { "There must be message in vault" using (messagesStateRef.isNotEmpty()) }
 
-        val txnBuilder = TransactionBuilder(notary = metaInfoStateAndRef.state.notary)
+        val txnBuilder = TransactionBuilder(notary = sessionStateAndRef.state.notary)
                 .addCommand(CloseMessages(), ourIdentity.owningKey)
         messagesStateRef.forEach { txnBuilder.addInputState(it) }
         txnBuilder.verify(serviceHub)

@@ -1,7 +1,7 @@
 package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.contracts.states.ChatSessionInfo
 import com.r3.corda.lib.chat.contracts.states.ChatStatus
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import com.r3.corda.lib.tokens.contracts.utilities.withNotary
@@ -18,25 +18,25 @@ import java.util.*
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class CreateMetaInfoFlow(
+class CreateSessionInfoFlow(
         private val chatId: UniqueIdentifier = UniqueIdentifier.fromString(UUID.randomUUID().toString()),
         private val subject: String,
         private val receivers: List<Party>
-) : FlowLogic<StateAndRef<ChatMetaInfo>>() {
+) : FlowLogic<StateAndRef<ChatSessionInfo>>() {
 
     @Suspendable
-    override fun call(): StateAndRef<ChatMetaInfo> {
+    override fun call(): StateAndRef<ChatSessionInfo> {
         val notary = chatVaultService.notary()
-        val chatMetaInfo = ChatMetaInfo(
+        val session = ChatSessionInfo(
                 linearId = chatId,
                 admin = ourIdentity,
                 receivers = receivers,
                 subject = subject,
                 status = ChatStatus.ACTIVE
         )
-        val transactionState = chatMetaInfo withNotary notary
+        val transactionState = session withNotary notary
         val signedTxn = subFlow(CreateEvolvableTokens(transactionState))
 
-        return signedTxn.coreTransaction.outRefsOfType<ChatMetaInfo>().single()
+        return signedTxn.coreTransaction.outRefsOfType<ChatSessionInfo>().single()
     }
 }

@@ -1,8 +1,8 @@
 package com.r3.corda.lib.chat.workflows.flows.utils
 
-import com.r3.corda.lib.chat.contracts.internal.schemas.PersistentChatMetaInfo
+import com.r3.corda.lib.chat.contracts.internal.schemas.PersistentChatSessionInfo
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.contracts.states.ChatSessionInfo
 import com.r3.corda.lib.chat.workflows.flows.service.ChatStatus
 import net.corda.core.contracts.LinearState
 import net.corda.core.contracts.StateAndRef
@@ -21,15 +21,15 @@ class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToke
 
     /*  find notary */
     fun notary() = serviceHub.networkMapCache.notaryIdentities.first()
-    fun notary(chatId: UniqueIdentifier) = getMetaInfo(chatId).state.notary
+    fun notary(chatId: UniqueIdentifier) = getSessionInfo(chatId).state.notary
 
     /* get all chats level information */
     // get ID for all chats
     fun getAllChatIDs(status: StateStatus = StateStatus.UNCONSUMED): List<UniqueIdentifier> {
 
-        val idGroup = builder { PersistentChatMetaInfo::created.min(groupByColumns = listOf(PersistentChatMetaInfo::identifier)) }
+        val idGroup = builder { PersistentChatSessionInfo::created.min(groupByColumns = listOf(PersistentChatSessionInfo::identifier)) }
         val idGroupCriteria = QueryCriteria.VaultCustomQueryCriteria(idGroup)
-        val chatInfos = serviceHub.vaultService.queryBy<ChatMetaInfo>(
+        val chatInfos = serviceHub.vaultService.queryBy<ChatSessionInfo>(
                 criteria = QueryCriteria.LinearStateQueryCriteria(status = status).and(idGroupCriteria)
         )
 
@@ -59,15 +59,15 @@ class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToke
         return stateAndRefs.states
     }
 
-    /* get chat level meta data information */
-    fun getMetaInfo(chatId: UniqueIdentifier): StateAndRef<ChatMetaInfo> = getVaultStates<ChatMetaInfo>(chatId).first()
-    fun getActiveMetaInfo(chatId: UniqueIdentifier): StateAndRef<ChatMetaInfo> = getVaultStates<ChatMetaInfo>(chatId).first()
-    fun getMetaInfoOrNull(chatId: UniqueIdentifier): StateAndRef<ChatMetaInfo>? = getVaultStates<ChatMetaInfo>(chatId).firstOrNull()
+    /* get chat level session data information */
+    fun getSessionInfo(chatId: UniqueIdentifier): StateAndRef<ChatSessionInfo> = getVaultStates<ChatSessionInfo>(chatId).first()
+    fun getActiveSessionInfo(chatId: UniqueIdentifier): StateAndRef<ChatSessionInfo> = getVaultStates<ChatSessionInfo>(chatId).first()
+    fun getSessionInfoOrNull(chatId: UniqueIdentifier): StateAndRef<ChatSessionInfo>? = getVaultStates<ChatSessionInfo>(chatId).firstOrNull()
 
     // get current chat status
     fun getChatStatus(chatId: UniqueIdentifier): ChatStatus {
-        val metaInfo = getMetaInfoOrNull(chatId)
-        when (metaInfo) {
+        val sessionInfo = getSessionInfoOrNull(chatId)
+        when (sessionInfo) {
             null -> return ChatStatus.CLOSED
             else -> return ChatStatus.ACTIVE
         }

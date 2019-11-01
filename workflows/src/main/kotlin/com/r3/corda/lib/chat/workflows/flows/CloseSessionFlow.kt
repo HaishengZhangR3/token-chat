@@ -2,7 +2,7 @@ package com.r3.corda.lib.chat.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.workflows.flows.internal.CloseMessagesFlow
-import com.r3.corda.lib.chat.workflows.flows.internal.CloseMetaInfoFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.CloseSessionInfoFlow
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.observer.CloseCommand
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
@@ -15,43 +15,43 @@ import net.corda.core.utilities.unwrap
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class CloseChatFlow(
+class CloseSessionFlow(
         private val chatId: UniqueIdentifier
 ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
-        val metaInfoStateRef = chatVaultService.getMetaInfoOrNull(chatId)
-        require(metaInfoStateRef != null) { "ChatId must exist." }
+        val sessionStateRef = chatVaultService.getSessionInfoOrNull(chatId)
+        require(sessionStateRef != null) { "ChatId must exist." }
 
-        val metaInfo = metaInfoStateRef!!.state.data
+        val session = sessionStateRef!!.state.data
         requireThat {
-            "Only chat admin can close chat." using (ourIdentity == metaInfo.admin)
+            "Only chat admin can close chat." using (ourIdentity == session.admin)
         }
 
         // close all messages in our side
         subFlow(CloseMessagesFlow(chatId))
 
         // close all messages from other sides
-        metaInfo.receivers.map { initiateFlow(it).send(chatId) }
+        session.receivers.map { initiateFlow(it).send(chatId) }
 
-        // close meta
-        val txn = subFlow(CloseMetaInfoFlow(chatId))
-        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseCommand()))
+        // close session
+        val txn = subFlow(CloseSessionInfoFlow(chatId))
+        subFlow(ChatNotifyFlow(info = listOf(session), command = CloseCommand()))
         return txn
     }
 }
 
-@InitiatedBy(CloseChatFlow::class)
-class CloseChatFlowResponder(private val otherSession: FlowSession) : FlowLogic<SignedTransaction>() {
+@InitiatedBy(CloseSessionFlow::class)
+class CloseSessionFlowResponder(private val otherSession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call(): SignedTransaction {
 
         val chatId = otherSession.receive<UniqueIdentifier>().unwrap { it }
-        val metaInfo = chatVaultService.getMetaInfo(chatId).state.data
+        val session = chatVaultService.getSessionInfo(chatId).state.data
 
         val txn = subFlow(CloseMessagesFlow(chatId))
-        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseCommand()))
+        subFlow(ChatNotifyFlow(info = listOf(session), command = CloseCommand()))
         return txn
 
     }

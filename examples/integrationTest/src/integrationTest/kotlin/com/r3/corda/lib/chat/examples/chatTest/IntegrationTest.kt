@@ -1,10 +1,10 @@
 package com.r3.corda.lib.chat.examples.chatTest
 
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.contracts.states.ChatSessionInfo
 import com.r3.corda.lib.chat.workflows.flows.AddParticipantsFlow
-import com.r3.corda.lib.chat.workflows.flows.CloseChatFlow
-import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import com.r3.corda.lib.chat.workflows.flows.CloseSessionFlow
+import com.r3.corda.lib.chat.workflows.flows.CreateSessionFlow
 import com.r3.corda.lib.chat.workflows.flows.SendMessageFlow
 import com.r3.corda.lib.chat.workflows.flows.service.*
 import net.corda.core.contracts.StateAndRef
@@ -63,7 +63,7 @@ class IntegrationTest {
 
     private fun createChat(who: NodeHandle, toList: List<Party>, any: String): ChatMessage {
         val createChat = who.rpc.startFlow(
-                ::CreateChatFlow,
+                ::CreateSessionFlow,
                 "Sample Topic $any",
                 "Some sample content created $any",
                 toList
@@ -84,7 +84,7 @@ class IntegrationTest {
     private fun closeChat(proposer: NodeHandle, chatId: UniqueIdentifier): Any {
         log.warn("***** Do final close *****")
         val doIt = proposer.rpc.startFlow(
-                ::CloseChatFlow,
+                ::CloseSessionFlow,
                 chatId
         ).returnValue.getOrThrow()
 
@@ -167,8 +167,8 @@ class IntegrationTest {
             log.warn("***** Chat ${chatOnA.linearId} closed *****")
 
             log.warn("**** Now let's check the closed chat *****")
-            val chatsInA = A.rpc.vaultQuery(ChatMetaInfo::class.java).states
-            val chatsInB = B.rpc.vaultQuery(ChatMetaInfo::class.java).states
+            val chatsInA = A.rpc.vaultQuery(ChatSessionInfo::class.java).states
+            val chatsInB = B.rpc.vaultQuery(ChatSessionInfo::class.java).states
             Assert.assertTrue("Should not be any chat in A", chatsInA.isEmpty())
             Assert.assertTrue("Should not be any chat in B", chatsInB.isEmpty())
 
@@ -197,9 +197,9 @@ class IntegrationTest {
             addParticipantsToChat(proposer = B, toAdd = listOf(C.legalIdentity()), chatId = chatOnA.linearId)
 
             log.warn("**** Now let's check the chat *****")
-            val chatsInA = A.rpc.vaultQuery(ChatMetaInfo::class.java).states
-            val chatsInB = B.rpc.vaultQuery(ChatMetaInfo::class.java).states
-            val chatsInC = B.rpc.vaultQuery(ChatMetaInfo::class.java).states
+            val chatsInA = A.rpc.vaultQuery(ChatSessionInfo::class.java).states
+            val chatsInB = B.rpc.vaultQuery(ChatSessionInfo::class.java).states
+            val chatsInC = B.rpc.vaultQuery(ChatSessionInfo::class.java).states
             Assert.assertTrue(chatsInA.isNotEmpty())
             Assert.assertTrue(chatsInB.isNotEmpty())
             Assert.assertTrue(chatsInC.isNotEmpty())

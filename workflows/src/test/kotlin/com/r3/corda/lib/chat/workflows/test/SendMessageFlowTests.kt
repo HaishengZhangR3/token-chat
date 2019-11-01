@@ -1,8 +1,8 @@
 package com.r3.corda.lib.chat.workflows.test
 
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
-import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import com.r3.corda.lib.chat.contracts.states.ChatSessionInfo
+import com.r3.corda.lib.chat.workflows.flows.CreateSessionFlow
 import com.r3.corda.lib.chat.workflows.flows.SendMessageFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.contracts.UniqueIdentifier
@@ -54,7 +54,7 @@ class SendMessageFlowTests {
     fun `should be possible to send message to a chat`() {
 
         // 1 create one
-        val newChatFlow = nodeA.startFlow(CreateChatFlow(
+        val newChatFlow = nodeA.startFlow(CreateSessionFlow(
                 subject = "subject",
                 content = "content",
                 receivers = listOf(nodeB.info.legalIdentities.single())
@@ -62,28 +62,28 @@ class SendMessageFlowTests {
         network.runNetwork()
         val newChatMsg = newChatFlow.getOrThrow().state.data
 
-        val newChatMetaInfoA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val newChatMetaInfoB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val newSessionA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
+        val newSessionB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
 
         // 2 send message to the chat
         val sendMessageFlow = nodeB.startFlow(
                 SendMessageFlow(
                         content = "reply content to a chat",
-                        chatId = newChatMetaInfoA.linearId
+                        chatId = newSessionA.linearId
                 )
         )
 
         network.runNetwork()
         val sendMessage = sendMessageFlow.getOrThrow().state.data
 
-        // there are one chat meta on ledge in each node
-        val sendMessageMetaStateRefA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val sendMessageMetaStateRefB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        Assert.assertTrue(sendMessageMetaStateRefA.size == 1)
-        Assert.assertTrue(sendMessageMetaStateRefB.size == 1)
+        // there are one chat session on ledge in each node
+        val sendMessageSessionStateRefA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states
+        val sendMessageSessionStateRefB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states
+        Assert.assertTrue(sendMessageSessionStateRefA.size == 1)
+        Assert.assertTrue(sendMessageSessionStateRefB.size == 1)
 
-        val sendMessageChatMetaA = sendMessageMetaStateRefA.single().state.data
-        val sendMessageChatMetaB = sendMessageMetaStateRefB.single().state.data
+        val sendMessageChatSessionA = sendMessageSessionStateRefA.single().state.data
+        val sendMessageChatSessionB = sendMessageSessionStateRefB.single().state.data
 
         // there are two chat messages on ledge in each node
         val chatMessageStateRefA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states
@@ -101,10 +101,10 @@ class SendMessageFlowTests {
 
         // same chat id
         Assert.assertEquals(listOf(
-                sendMessageChatMetaA.linearId.id.toString(),
-                sendMessageChatMetaB.linearId.id.toString(),
-                newChatMetaInfoA.linearId.id.toString(),
-                newChatMetaInfoB.linearId.id.toString(),
+                sendMessageChatSessionA.linearId.id.toString(),
+                sendMessageChatSessionB.linearId.id.toString(),
+                newSessionA.linearId.id.toString(),
+                newSessionB.linearId.id.toString(),
                 chatMessageA.token.tokenIdentifier,
                 chatMessageB.token.tokenIdentifier,
                 sendMessage.token.tokenIdentifier
@@ -135,7 +135,7 @@ class SendMessageFlowTests {
     fun `send message to chat should follow constrains`() {
 
         // 1 create one
-        val newChatFlow = nodeA.startFlow(CreateChatFlow(
+        val newChatFlow = nodeA.startFlow(CreateSessionFlow(
                 subject = "subject",
                 content = "content",
                 receivers = listOf(nodeB.info.legalIdentities.single())
@@ -143,8 +143,8 @@ class SendMessageFlowTests {
         network.runNetwork()
         newChatFlow.getOrThrow()
 
-        val newChatMetaInfoA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val newChatMetaInfoB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val newSessionA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
+        val newSessionB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
         val newChatMessageA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states.single().state.data
         val newChatMessageB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states.single().state.data
 
@@ -152,15 +152,15 @@ class SendMessageFlowTests {
         val replyFlow = nodeB.startFlow(
                 SendMessageFlow(
                         content = "reply content to a chat",
-                        chatId = newChatMetaInfoA.linearId
+                        chatId = newSessionA.linearId
                 )
         )
 
         network.runNetwork()
         replyFlow.getOrThrow()
 
-        val sendMessageChatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val sendMessageChatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val sendMessageChatSessionA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
+        val sendMessageChatSessionB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
 
         val chatMessageStateRefA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states
         val chatMessageStateRefB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states
@@ -171,10 +171,10 @@ class SendMessageFlowTests {
         // the following tests are based on "state machine" constrains
         // chatId must exist
         Assert.assertEquals(listOf(
-                sendMessageChatMetaA.linearId.id.toString(),
-                sendMessageChatMetaB.linearId.id.toString(),
-                newChatMetaInfoA.linearId.id.toString(),
-                newChatMetaInfoB.linearId.id.toString(),
+                sendMessageChatSessionA.linearId.id.toString(),
+                sendMessageChatSessionB.linearId.id.toString(),
+                newSessionA.linearId.id.toString(),
+                newSessionB.linearId.id.toString(),
                 chatMessageA.token.tokenIdentifier,
                 chatMessageB.token.tokenIdentifier,
                 newChatMessageA.token.tokenIdentifier,
@@ -183,8 +183,8 @@ class SendMessageFlowTests {
                 1)
 
         // replier must be in existing participants
-        Assert.assertTrue(sendMessageChatMetaA.receivers.contains(nodeB.info.legalIdentities.single()))
-        Assert.assertTrue(sendMessageChatMetaB.receivers.contains(nodeB.info.legalIdentities.single()))
+        Assert.assertTrue(sendMessageChatSessionA.receivers.contains(nodeB.info.legalIdentities.single()))
+        Assert.assertTrue(sendMessageChatSessionB.receivers.contains(nodeB.info.legalIdentities.single()))
 
         //  sender must be the reply initiator
         Assert.assertTrue(chatMessageA.sender.equals(nodeB.info.legalIdentities.single()))
@@ -196,7 +196,7 @@ class SendMessageFlowTests {
     fun `should be possible to send message from other participants to a chat`() {
 
         // 1 create one
-        val newChatFlow = nodeA.startFlow(CreateChatFlow(
+        val newChatFlow = nodeA.startFlow(CreateSessionFlow(
                 subject = "subject",
                 content = "content",
                 receivers = listOf(nodeB.info.legalIdentities.single(), nodeC.info.legalIdentities.single())
@@ -227,16 +227,16 @@ class SendMessageFlowTests {
         network.runNetwork()
         sendFlowC.getOrThrow()
 
-        val metaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val metaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val metaC = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val sessionA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states
+        val sessionB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states
+        val sessionC = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states
         val messageA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states
         val messageB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states
         val messageC = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states
 
-        Assert.assertEquals(metaA.size, 1)
-        Assert.assertEquals(metaB.size, 1)
-        Assert.assertEquals(metaC.size, 1)
+        Assert.assertEquals(sessionA.size, 1)
+        Assert.assertEquals(sessionB.size, 1)
+        Assert.assertEquals(sessionC.size, 1)
         Assert.assertEquals(messageA.size, 3)
         Assert.assertEquals(messageB.size, 3)
         Assert.assertEquals(messageC.size, 3)

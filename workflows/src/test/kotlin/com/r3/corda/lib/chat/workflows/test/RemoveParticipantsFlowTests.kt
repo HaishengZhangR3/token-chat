@@ -1,7 +1,7 @@
 package com.r3.corda.lib.chat.workflows.test
 
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
-import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import com.r3.corda.lib.chat.contracts.states.ChatSessionInfo
+import com.r3.corda.lib.chat.workflows.flows.CreateSessionFlow
 import com.r3.corda.lib.chat.workflows.flows.RemoveParticipantsFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
@@ -52,7 +52,7 @@ class RemoveParticipantsFlowTests {
     fun `should be possible to remove participants from a chat`() {
 
         // 1 create one
-        val newChatFlow = nodeA.startFlow(CreateChatFlow(
+        val newChatFlow = nodeA.startFlow(CreateSessionFlow(
                 subject = "subject",
                 content = "content",
                 receivers = listOf(nodeB.info.legalIdentities.single(), nodeC.info.legalIdentities.single())
@@ -60,7 +60,7 @@ class RemoveParticipantsFlowTests {
         network.runNetwork()
         newChatFlow.getOrThrow()
 
-        val chatInB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val chatInB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
 
         // 2. remove participants
         val removeParticipantsFlow = nodeA.startFlow(
@@ -73,27 +73,27 @@ class RemoveParticipantsFlowTests {
         network.runNetwork()
         removeParticipantsFlow.getOrThrow()
 
-        // A and B should have meta info while C should not have
-        val metaStateRefA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val metaStateRefB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val metaStateRefC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        Assert.assertEquals(metaStateRefA.size, 1)
-        Assert.assertEquals(metaStateRefB.size, 1)
-        Assert.assertEquals(metaStateRefC.size, 0)
+        // A and B should have session info while C should not have
+        val sessionStateRefA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states
+        val sessionStateRefB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states
+        val sessionStateRefC = nodeC.services.vaultService.queryBy(ChatSessionInfo::class.java).states
+        Assert.assertEquals(sessionStateRefA.size, 1)
+        Assert.assertEquals(sessionStateRefB.size, 1)
+        Assert.assertEquals(sessionStateRefC.size, 0)
 
-        val metaA = metaStateRefA.single().state.data
-        val metaB = metaStateRefB.single().state.data
+        val sessionA = sessionStateRefA.single().state.data
+        val sessionB = sessionStateRefB.single().state.data
 
         val oldParticipants = chatInB.participants
         val expectedParticipants = oldParticipants - nodeC.info.legalIdentities.single()
-        val newParticipants = metaA.participants
+        val newParticipants = sessionA.participants
 
         Assert.assertTrue(expectedParticipants.size == newParticipants.size)
         Assert.assertTrue((expectedParticipants - newParticipants).isEmpty())
         Assert.assertTrue((newParticipants - expectedParticipants).isEmpty())
 
         Assert.assertEquals(
-                listOf(metaA.linearId, metaB.linearId).distinct().size,
+                listOf(sessionA.linearId, sessionB.linearId).distinct().size,
                 1
         )
     }
@@ -102,7 +102,7 @@ class RemoveParticipantsFlowTests {
     fun `add participants should follow constrain`() {
 
         // 1 create one
-        val newChatFlow = nodeA.startFlow(CreateChatFlow(
+        val newChatFlow = nodeA.startFlow(CreateSessionFlow(
                 subject = "subject",
                 content = "content",
                 receivers = listOf(nodeB.info.legalIdentities.single(), nodeC.info.legalIdentities.single())
@@ -110,42 +110,42 @@ class RemoveParticipantsFlowTests {
         network.runNetwork()
         newChatFlow.getOrThrow()
 
-        val oldChatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val oldChatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val oldChatMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val oldSessionA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
+        val oldSessionB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
+        val oldSessionC = nodeC.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
 
         // 2. remove participants
         val removeParticipantsFlow = nodeA.startFlow(
                 RemoveParticipantsFlow(
                         toRemove = listOf(nodeC.info.legalIdentities.single()),
-                        chatId = oldChatMetaA.linearId
+                        chatId = oldSessionA.linearId
                 )
         )
 
         network.runNetwork()
         removeParticipantsFlow.getOrThrow()
 
-        val chatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val chatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val sessionA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
+        val sessionB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states.single().state.data
 
         // the following tests are based on "state machine" constrains
         // linearId and subject must not change
         Assert.assertEquals(
-                listOf(chatMetaA.linearId, chatMetaB.linearId,
-                        oldChatMetaA.linearId, oldChatMetaB.linearId, oldChatMetaC.linearId).distinct().size,
+                listOf(sessionA.linearId, sessionB.linearId,
+                        oldSessionA.linearId, oldSessionB.linearId, oldSessionC.linearId).distinct().size,
                 1)
         Assert.assertEquals(
-                listOf(chatMetaA.subject, chatMetaB.subject,
-                        oldChatMetaA.subject, oldChatMetaB.subject, oldChatMetaC.subject).distinct().size,
+                listOf(sessionA.subject, sessionB.subject,
+                        oldSessionA.subject, oldSessionB.subject, oldSessionC.subject).distinct().size,
                 1)
 
         // admin must not change
         val admins = listOf(
-                chatMetaA.admin,
-                chatMetaB.admin,
-                oldChatMetaA.admin,
-                oldChatMetaB.admin,
-                oldChatMetaC.admin
+                sessionA.admin,
+                sessionB.admin,
+                oldSessionA.admin,
+                oldSessionB.admin,
+                oldSessionC.admin
         ).distinct()
         Assert.assertEquals(admins.size, 1)
 
@@ -153,10 +153,10 @@ class RemoveParticipantsFlowTests {
         Assert.assertEquals(nodeA.info.legalIdentities.single(), admins.single())
 
         // receivers list must change to new participants
-        val oldReceivers = oldChatMetaA.receivers
+        val oldReceivers = oldSessionA.receivers
         val expectedReceivers = oldReceivers - nodeC.info.legalIdentities.single()
-        val newReceiversA = chatMetaA.receivers
-        val newReceiversB = chatMetaB.receivers
+        val newReceiversA = sessionA.receivers
+        val newReceiversB = sessionB.receivers
 
         Assert.assertEquals(newReceiversA, newReceiversB)
         Assert.assertEquals((newReceiversA - expectedReceivers).size, 0)

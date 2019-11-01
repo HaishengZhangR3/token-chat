@@ -7,8 +7,8 @@ interface ChatCommand : CommandData
 
 /* Commands below are used in Chat SDK internal */
 // Command for basic chat
-class CreateMeta : EvolvableTokenTypeCommand // it is not needed, instead "Create : EvolvableTokenTypeCommand"
+class CreateSession : EvolvableTokenTypeCommand // it is not needed, instead "Create : EvolvableTokenTypeCommand"
 class CreateMessage : ChatCommand // it is not needed, instead "IssueTokenCommand : TokenCommand"
 
-class CloseMeta : EvolvableTokenTypeCommand  // will close meta manually by us instead of redeem since they are different.
+class CloseSession : EvolvableTokenTypeCommand  // will close session manually by us instead of redeem since they are different.
 class CloseMessages : ChatCommand

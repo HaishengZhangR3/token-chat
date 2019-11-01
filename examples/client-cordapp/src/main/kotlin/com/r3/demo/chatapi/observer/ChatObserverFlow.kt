@@ -3,10 +3,10 @@ package com.r3.demo.chatapi.observer
 import co.paralleluniverse.fibers.Suspendable
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.contracts.states.ChatSessionInfo
 import com.r3.corda.lib.chat.workflows.flows.observer.*
 import com.r3.demo.chatapi.data.ChatMessageData
-import com.r3.demo.chatapi.data.ChatMetaInfoData
+import com.r3.demo.chatapi.data.ChatSessionInfoData
 import net.corda.core.contracts.ContractState
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
@@ -42,22 +42,22 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
 
     private fun parseData(command: NotifyCommand, info: List<ContractState>): String =
             when (command) {
-                // is CreateMeta: don't care, will update customers only after ChatMessage created
+                // is CreateSession: don't care, will update customers only after ChatMessage created
                 is CreateCommand, is SendMessageCommand -> {
                     val message = info.single() as ChatMessage
                     chatMessageToJson(command, message)
                 }
                 is CloseCommand -> {
-                    val meta = info.single() as ChatMetaInfo
-                    chatMetaInfoToJson(command, meta)
+                    val session = info.single() as ChatSessionInfo
+                    sessionInfoToJson(command, session)
                 }
                 is AddParticipantsCommand -> {
-                    val meta = info.single() as ChatMetaInfo
-                    chatMetaInfoToJson(command, meta)
+                    val session = info.single() as ChatSessionInfo
+                    sessionInfoToJson(command, session)
                 }
                 is RemoveParticipantsCommand -> {
-                    val meta = info.single() as ChatMetaInfo
-                    chatMetaInfoToJson(command, meta)
+                    val session = info.single() as ChatSessionInfo
+                    sessionInfoToJson(command, session)
                 }
                 else -> ""
             }
@@ -66,9 +66,9 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
         return mapper.writeValueAsString(listOf(commandToString(command), ChatMessageData.fromState(message)))
     }
 
-    private fun chatMetaInfoToJson(command: NotifyCommand, meta: ChatMetaInfo): String {
+    private fun sessionInfoToJson(command: NotifyCommand, session: ChatSessionInfo): String {
         val mapper = jacksonObjectMapper()
-        return mapper.writeValueAsString(listOf(commandToString(command), ChatMetaInfoData.fromState(meta)))
+        return mapper.writeValueAsString(listOf(commandToString(command), ChatSessionInfoData.fromState(session)))
     }
 
     private fun commandToString(command: NotifyCommand): String =

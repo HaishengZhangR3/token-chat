@@ -20,18 +20,18 @@ class SendMessageFlow(
 ) : FlowLogic<StateAndRef<ChatMessage>>() {
     @Suspendable
     override fun call(): StateAndRef<ChatMessage> {
-        val metaInfoStateRef = chatVaultService.getMetaInfoOrNull(chatId)
-        require(metaInfoStateRef != null) { "ChatId must exist." }
+        val sessionStateRef = chatVaultService.getSessionInfoOrNull(chatId)
+        require(sessionStateRef != null) { "ChatId must exist." }
 
-        val metaInfo = metaInfoStateRef!!.state.data
-        require((metaInfo.receivers + metaInfo.admin).contains(ourIdentity)) {"Replier must be in existing participants"}
+        val session = sessionStateRef!!.state.data
+        require((session.receivers + session.admin).contains(ourIdentity)) {"Replier must be in existing participants"}
 
         val messageStateRef = subFlow(CreateMessageFlow(
                 chatId = chatId,
                 content = content
         ))
 
-        (metaInfo.receivers + metaInfo.admin).map { initiateFlow(it).send(messageStateRef.state.data) }
+        (session.receivers + session.admin).map { initiateFlow(it).send(messageStateRef.state.data) }
         return messageStateRef
     }
 }

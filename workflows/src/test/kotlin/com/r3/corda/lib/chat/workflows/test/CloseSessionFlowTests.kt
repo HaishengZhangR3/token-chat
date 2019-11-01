@@ -1,10 +1,10 @@
-package com.r3.corda.lib.chat.workflows.test.internal
+package com.r3.corda.lib.chat.workflows.test
 
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
-import com.r3.corda.lib.chat.workflows.flows.internal.CloseMetaInfoFlow
-import com.r3.corda.lib.chat.workflows.flows.internal.CreateMetaInfoFlow
-import com.r3.corda.lib.chat.workflows.flows.internal.UpdateReceiversFlow
+import com.r3.corda.lib.chat.contracts.states.ChatMessage
+import com.r3.corda.lib.chat.contracts.states.ChatSessionInfo
+import com.r3.corda.lib.chat.workflows.flows.*
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
+import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -16,7 +16,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class CloseMetaInfoFlowTests {
+class CloseSessionFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
@@ -52,41 +52,39 @@ class CloseMetaInfoFlowTests {
     @Test
     fun `should be possible to close a chat`() {
 
-        // 1 create one
-        val newChatFlow = nodeA.startFlow(CreateMetaInfoFlow(
+        val f1 = nodeA.startFlow(CreateSessionFlow(
                 subject = "subject",
+                content = "content new",
                 receivers = listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
-        val metaInfo = newChatFlow.getOrThrow().state.data
-
-        // 2 add receivers
-        val addParticipantsFlow = nodeA.startFlow(
-                UpdateReceiversFlow(
-                        toAdd = listOf(nodeC.info.legalIdentities.single()),
-                        chatId = metaInfo.linearId
-                )
-        )
-
-        network.runNetwork()
-        addParticipantsFlow.getOrThrow()
+        val msg = f1.getOrThrow()
+        val chatId = UniqueIdentifier.fromString(msg.state.data.token.tokenIdentifier)
 
         // 3. close chat
-        val closeFlow = nodeA.startFlow(
-                CloseMetaInfoFlow(
-                        chatId = metaInfo.linearId
+        val f2 = nodeA.startFlow(
+                CloseSessionFlow(
+                        chatId = chatId
                 )
         )
         network.runNetwork()
-        closeFlow.getOrThrow()
+        f2.getOrThrow()
 
-        // there are 0 chat on ledge in each node
-        val closedMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val closedMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val closedMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        // after all and all, there should be 0 session and 0 message on ledge in each node
+        val sessionA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states
+        val sessionB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states
+        val sessionC = nodeC.services.vaultService.queryBy(ChatSessionInfo::class.java).states
 
-        Assert.assertTrue(closedMetaA.isEmpty())
-        Assert.assertTrue(closedMetaB.isEmpty())
-        Assert.assertTrue(closedMetaC.isEmpty())
+        val chatMessagesA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states
+        val chatMessagesB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states
+        val chatMessagesC = nodeC.services.vaultService.queryBy(ChatMessage::class.java).states
+
+        Assert.assertTrue(sessionA.isEmpty())
+        Assert.assertTrue(sessionB.isEmpty())
+        Assert.assertTrue(sessionC.isEmpty())
+
+        Assert.assertTrue(chatMessagesA.isEmpty())
+        Assert.assertTrue(chatMessagesB.isEmpty())
+        Assert.assertTrue(chatMessagesC.isEmpty())
     }
 }

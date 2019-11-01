@@ -2,7 +2,7 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.contracts.states.ChatSessionInfo
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import com.r3.corda.lib.chat.workflows.flows.utils.randomID
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
@@ -22,12 +22,12 @@ class CreateMessageFlow(
 
     @Suspendable
     override fun call(): StateAndRef<ChatMessage> {
-        val metaInfo = chatVaultService.getMetaInfo(chatId).state.data
+        val session = chatVaultService.getSessionInfo(chatId).state.data
 
-        val chatPointer = metaInfo.toPointer<ChatMetaInfo>()
+        val chatPointer = session.toPointer<ChatSessionInfo>()
         val issuedTokenType = chatPointer issuedBy ourIdentity
 
-        val allReceivers = metaInfo.receivers + metaInfo.admin
+        val allReceivers = session.receivers + session.admin
 
         val messageId = randomID()
         val flows = allReceivers.map { receiver ->

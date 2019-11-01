@@ -1,7 +1,7 @@
 package com.r3.corda.lib.chat.workflows.test
 
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.contracts.states.ChatSessionInfo
 import com.r3.corda.lib.chat.workflows.flows.*
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.contracts.UniqueIdentifier
@@ -52,7 +52,7 @@ class ZAllInOneTests {
     @Test
     fun `should be possible to close a chat`() {
 
-        val f1 = nodeA.startFlow(CreateChatFlow(
+        val f1 = nodeA.startFlow(CreateSessionFlow(
                 subject = "subject",
                 content = "content new",
                 receivers = listOf(nodeB.info.legalIdentities.single())
@@ -112,7 +112,7 @@ class ZAllInOneTests {
 
         // 3. close chat
         val f7 = nodeA.startFlow(
-                CloseChatFlow(
+                CloseSessionFlow(
                         chatId = chatId
                 )
         )
@@ -120,18 +120,18 @@ class ZAllInOneTests {
         f7.getOrThrow()
 
 
-        // after all and all, there should be 0 meta and 0 message on ledge in each node
-        val chatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val chatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val chatMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        // after all and all, there should be 0 session and 0 message on ledge in each node
+        val sessionA = nodeA.services.vaultService.queryBy(ChatSessionInfo::class.java).states
+        val sessionB = nodeB.services.vaultService.queryBy(ChatSessionInfo::class.java).states
+        val sessionC = nodeC.services.vaultService.queryBy(ChatSessionInfo::class.java).states
 
         val chatMessagesA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states
         val chatMessagesB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states
         val chatMessagesC = nodeC.services.vaultService.queryBy(ChatMessage::class.java).states
 
-        Assert.assertTrue(chatMetaA.isEmpty())
-        Assert.assertTrue(chatMetaB.isEmpty())
-        Assert.assertTrue(chatMetaC.isEmpty())
+        Assert.assertTrue(sessionA.isEmpty())
+        Assert.assertTrue(sessionB.isEmpty())
+        Assert.assertTrue(sessionC.isEmpty())
 
         Assert.assertTrue(chatMessagesA.isEmpty())
         Assert.assertTrue(chatMessagesB.isEmpty())

@@ -1,7 +1,7 @@
 package com.r3.corda.lib.chat.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.contracts.states.ChatSessionInfo
 import com.r3.corda.lib.chat.workflows.flows.internal.CloseMessagesFlow
 import com.r3.corda.lib.chat.workflows.flows.internal.UpdateReceiversFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
@@ -19,15 +19,15 @@ import net.corda.core.utilities.unwrap
 class RemoveParticipantsFlow(
         private val chatId: UniqueIdentifier,
         private val toRemove: List<Party>
-) : FlowLogic<StateAndRef<ChatMetaInfo>>() {
+) : FlowLogic<StateAndRef<ChatSessionInfo>>() {
     @Suspendable
-    override fun call(): StateAndRef<ChatMetaInfo> {
-        val metaInfoStateRef = chatVaultService.getMetaInfoOrNull(chatId)
-        require(metaInfoStateRef != null) { "ChatId must exist." }
+    override fun call(): StateAndRef<ChatSessionInfo> {
+        val sessionStateRef = chatVaultService.getSessionInfoOrNull(chatId)
+        require(sessionStateRef != null) { "ChatId must exist." }
 
-        val metaInfo = metaInfoStateRef!!.state.data
+        val session = sessionStateRef!!.state.data
         requireThat {
-            "Only chat admin can remove participants from chat." using (ourIdentity == metaInfo.admin)
+            "Only chat admin can remove participants from chat." using (ourIdentity == session.admin)
         }
         // close all messages from other sides
         toRemove.map { initiateFlow(it).send(chatId) }

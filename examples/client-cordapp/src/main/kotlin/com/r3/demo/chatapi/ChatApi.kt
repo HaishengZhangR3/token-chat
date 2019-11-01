@@ -1,7 +1,7 @@
 package com.r3.demo.chatapi
 
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.contracts.states.ChatSessionInfo
 import com.r3.corda.lib.chat.workflows.flows.*
 import com.r3.corda.lib.chat.workflows.flows.service.*
 import net.corda.core.contracts.StateAndRef
@@ -37,7 +37,7 @@ class ChatApi() {
 
         log.warn("***** createChat *****")
         val createChat = proxy.startFlow(
-                ::CreateChatFlow,
+                ::CreateSessionFlow,
                 subject,
                 content,
                 receivers
@@ -58,14 +58,14 @@ class ChatApi() {
     fun closeChat(chatId: UniqueIdentifier): SignedTransaction {
         log.warn("***** closeChat *****")
         val doIt = proxy.startFlow(
-                ::CloseChatFlow,
+                ::CloseSessionFlow,
                 chatId
         ).returnValue.getOrThrow()
 
         return doIt
     }
 
-    fun addParticipants(chatId: UniqueIdentifier, toAdd: List<Party>): ChatMetaInfo {
+    fun addParticipants(chatId: UniqueIdentifier, toAdd: List<Party>): ChatSessionInfo {
         log.warn("***** addParticipants *****")
         val doIt = proxy.startFlow(
                 ::AddParticipantsFlow,
@@ -75,7 +75,7 @@ class ChatApi() {
         return doIt.state.data
     }
 
-    fun removeParticipants(chatId: UniqueIdentifier, toRemove: List<Party>): ChatMetaInfo {
+    fun removeParticipants(chatId: UniqueIdentifier, toRemove: List<Party>): ChatSessionInfo {
         log.warn("***** removeParticipants *****")
         val doIt = proxy.startFlow(
                 ::RemoveParticipantsFlow,

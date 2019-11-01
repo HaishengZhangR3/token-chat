@@ -1,8 +1,8 @@
 package com.r3.corda.lib.chat.contracts.states
 
-import com.r3.corda.lib.chat.contracts.ChatMetaInfoContract
-import com.r3.corda.lib.chat.contracts.internal.schemas.ChatMetaInfoSchema
-import com.r3.corda.lib.chat.contracts.internal.schemas.PersistentChatMetaInfo
+import com.r3.corda.lib.chat.contracts.ChatSessionInfoContract
+import com.r3.corda.lib.chat.contracts.internal.schemas.ChatSessionInfoSchema
+import com.r3.corda.lib.chat.contracts.internal.schemas.PersistentChatSessionInfo
 import com.r3.corda.lib.tokens.contracts.states.EvolvableTokenType
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.LinearState
@@ -22,8 +22,8 @@ sealed class ChatStatus {
 }
 
 @CordaSerializable
-@BelongsToContract(ChatMetaInfoContract::class)
-data class ChatMetaInfo(
+@BelongsToContract(ChatSessionInfoContract::class)
+data class ChatSessionInfo(
         override val linearId: UniqueIdentifier,
         val created: Instant = Instant.now(),
         val admin: Party,
@@ -34,8 +34,8 @@ data class ChatMetaInfo(
 
     override fun generateMappedObject(schema: MappedSchema): PersistentState =
             when (schema) {
-                is ChatMetaInfoSchema ->
-                    PersistentChatMetaInfo(
+                is ChatSessionInfoSchema ->
+                    PersistentChatSessionInfo(
                             identifier = linearId.id,
                             created = created,
                             admin = admin,
@@ -52,8 +52,8 @@ data class ChatMetaInfo(
     override val participants: List<AbstractParty> get() = receivers + admin
     override val fractionDigits = 0
 
-    override fun supportedSchemas(): Iterable<MappedSchema> = listOf(ChatMetaInfoSchema)
+    override fun supportedSchemas(): Iterable<MappedSchema> = listOf(ChatSessionInfoSchema)
     override fun toString(): String {
-        return "ChatMetaInfo(linearId=$linearId, created=$created, admin=$admin, receivers=$receivers, subject='$subject', status=$status, fractionDigits=$fractionDigits)"
+        return "ChatSessionInfo(linearId=$linearId, created=$created, admin=$admin, receivers=$receivers, subject='$subject', status=$status, fractionDigits=$fractionDigits)"
     }
 }

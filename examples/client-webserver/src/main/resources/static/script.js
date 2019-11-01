@@ -77,18 +77,18 @@ function parseNotification(data){
       return '<B><font color="' + getColor(chatMsg.sender) + '">[' + chatMsg.sender + ']</font></B> ' + chatMsg.content
 
     case "CloseCommand":
-      var chatMeta = message[1]
-      chatLastUpdated = chatMeta.linearId.id
+      var session = message[1]
+      chatLastUpdated = session.linearId.id
       return '<B><font color="' + getColor('Title') + '">[' + chatLastUpdated + ']</font></B> ' + ' is closed.'
 
     case "AddParticipantsCommand":
-      var chatMeta = message[1]
-      chatLastUpdated = chatMeta.linearId.id
+      var session = message[1]
+      chatLastUpdated = session.linearId.id
       return '<B><font color="' + getColor('Title') + '">[' + chatLastUpdated + ']</font></B> ' + ' added one participant.'
 
     case "RemoveParticipantsCommand":
-      var chatMeta = message[1]
-      chatLastUpdated = chatMeta.linearId.id
+      var session = message[1]
+      chatLastUpdated = session.linearId.id
       return '<B><font color="' + getColor('Title') + '">[' + chatLastUpdated + ']</font></B> ' + ' removed one participant.'
 
     default:
