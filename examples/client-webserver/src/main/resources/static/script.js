@@ -73,7 +73,7 @@ function parseNotification(data){
     case "CreateCommand":
     case "SendMessageCommand":
       var chatMsg = message[1];
-      chatLastUpdated = chatMsg.token.tokenIdentifier
+      chatLastUpdated = chatMsg.chatId.id
       return '<B><font color="' + getColor(chatMsg.sender) + '">[' + chatMsg.sender + ']</font></B> ' + chatMsg.content
 
     case "CloseCommand":
@@ -160,14 +160,14 @@ function get(path, needParseChatMessage){
 // parser for "get" message from server
 function parseChatMessage(data){
   var messages = JSON.parse(data);
-  messages.sort((a, b) => (a.token.tokenIdentifier > b.token.tokenIdentifier) ? 1 : (a.token.tokenIdentifier === b.token.tokenIdentifier) ? ((a.created.epochSecond > b.created.epochSecond) ? 1 : -1) : -1 );
+  messages.sort((a, b) => (a.chatId.id > b.chatId.id) ? 1 : (a.chatId.id === b.chatId.id) ? ((a.created.epochSecond > b.created.epochSecond) ? 1 : -1) : -1 );
 
   // display the last updated chats
-  var msgsLastUpdated = messages.filter(it => it.token.tokenIdentifier === chatLastUpdated);
+  var msgsLastUpdated = messages.filter(it => it.chatId.id === chatLastUpdated);
   displayChats(msgsLastUpdated)
 
   // display other chats
-  var msgsNormal = messages.filter(it => it.token.tokenIdentifier !== chatLastUpdated);
+  var msgsNormal = messages.filter(it => it.chatId.id !== chatLastUpdated);
   displayChats(msgsNormal)
 }
 
@@ -177,7 +177,7 @@ function displayChats(messages){
   var i;
 
   for (i = 0; i < messages.length; i++) {
-    var currentId = messages[i].token.tokenIdentifier;
+    var currentId = messages[i].chatId.id;
     if (currentId !== previousId){
       previousId = currentId;
       displayChatTitle(container, messages[i]);
@@ -193,7 +193,7 @@ function displayChatTitle(container, message){
   if (!active){
     titleColor = getColor('Closed')
   }
-  messageElem.innerHTML = '<p align="center"><B><font color="' + titleColor + '">[' + message.token.tokenIdentifier + ']</font></B></p>';
+  messageElem.innerHTML = '<p align="center"><B><font color="' + titleColor + '">[' + message.chatId.id + ']</font></B></p>';
   container.append(messageElem);
 }
 
