@@ -16,7 +16,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class CloseChatFlowTests {
+class ZAllInOneTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
@@ -61,14 +61,64 @@ class CloseChatFlowTests {
         val msg = f1.getOrThrow()
         val chatId = UniqueIdentifier.fromString(msg.state.data.token.tokenIdentifier)
 
-        // 3. close chat
         val f2 = nodeA.startFlow(
-                CloseChatFlow(
+                SendMessageFlow(
+                        content = "reply content to a chat 1",
                         chatId = chatId
                 )
         )
         network.runNetwork()
         f2.getOrThrow()
+
+        val f3 = nodeA.startFlow(
+                AddParticipantsFlow(
+                        toAdd = listOf(nodeC.info.legalIdentities.single()),
+                        chatId = chatId
+                )
+        )
+
+        network.runNetwork()
+        f3.getOrThrow()
+
+        val f4 = nodeB.startFlow(
+                SendMessageFlow(
+                        content = "reply content to a chat 2",
+                        chatId = chatId
+                )
+        )
+        network.runNetwork()
+        f4.getOrThrow()
+
+        val f5 = nodeA.startFlow(
+                RemoveParticipantsFlow(
+                        toRemove = listOf(nodeB.info.legalIdentities.single()),
+                        chatId = chatId
+                )
+        )
+
+        network.runNetwork()
+        f5.getOrThrow()
+
+        // 2 send message to the chat
+        val f6 = nodeC.startFlow(
+                SendMessageFlow(
+                        content = "reply content to a chat 3",
+                        chatId = chatId
+                )
+        )
+        network.runNetwork()
+        f6.getOrThrow()
+
+
+        // 3. close chat
+        val f7 = nodeA.startFlow(
+                CloseChatFlow(
+                        chatId = chatId
+                )
+        )
+        network.runNetwork()
+        f7.getOrThrow()
+
 
         // after all and all, there should be 0 meta and 0 message on ledge in each node
         val chatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
