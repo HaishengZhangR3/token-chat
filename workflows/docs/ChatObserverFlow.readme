@@ -17,33 +17,35 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
     @Suspendable
     override fun call(): Unit {
         /**
-         * You'd choose either do some extension logic, or discard the information received.
+         * You'd choose either do some extension logic, or just discard the information received.
          * The received information send from Chat SDK is a [List] with two elements inside:
-         * First one is a [ChatCommand] showing which command send you this message;
+         * First one is a [NotifyCommand] showing which command sends you this message;
          * Second one is a [List], where ChatSessionInfo and ChatMessage instances are saved;
-         * [todo] You'd refer to Chat SDK document to know which command map to which state in the message.
+         * [todo] You'd refer to Chat SDK document to know which command map to which state list in the message.
          */
         val (command, info) = otherSession.receive<List<Any>>().unwrap { it }
 
         /**
-         * Here is an example to interprete the command and its state to a string.
-         * You'd do more extension work, like:
+         * Here is an example to interpret the command and its state to a string.
+         * You'd also do more extension work, like:
          *      Write to your own DB for auditing purpose,
          *      Perform automation respond or other work,
          *      Achieve messages,
          *      ....
          */
-        parseData(command = command as ChatCommand, info = info as List<ContractState>))
+        val data = parseData(command = command as NotifyCommand, info = info as List<ContractState>)
+        if (data.isNotEmpty()) {
+            wsService.wsServer.getNotifyList().map { it.send(data) }
+        }
     }
 
     private fun parseData(command: ChatCommand, info: ContractState): String =
             when (command) {
-                is CreateMessage -> "New Message: " + chatInfoToString(info.single() as ChatMessage)
-                is Close         -> {
-                    val session = info.single() as ChatSessionInfo;
-                    "${session.linearId} is closed by ${session.admin.name.organisation}"
-                // is xxxx
-                else             -> ""
+                is CreateCommand, is SendMessageCommand -> "Got Message: " + chatInfoToString(info.single() as ChatMessage)
+                is CloseCommand   -> "${session.linearId} is closed by ${session.admin.name.organisation}"
+                is AddParticipantsCommand -> "${session.linearId} added parties by ${session.admin.name.organisation}"
+                is RemoveParticipantsCommand -> "${session.linearId} removed parties by ${session.admin.name.organisation}"
+                else -> ""
             }
 
     private fun chatInfoToString(info: ChatMessage) =

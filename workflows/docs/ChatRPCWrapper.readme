@@ -1,15 +1,23 @@
 // DOCSTART ChatRPCWrapper
 /**
- * This is an exmple code showing you how to call Chat SDK API.
+ * This is an example code showing you how to call Chat SDK API.
  * Purpose of this is so that you are able to:
- *      - build their own business logic with the help of Chat SDK, and/or
- *      - expose user-friendly service API instead of Corda specific API
+ *      - build your own business logic with the help of Chat SDK, and/or
+ *      - expose user-friendly service (API) instead of Corda specific API
  *
  * You can implement this logic in either an application or a CorDapp.
- * In order to compile your application, you'd include the followign jar file in the project settings:
+ * In order to compile your application, you'd include the following jar files in the project settings:
  *
  *      cordaCompile "$corda_release_group:corda-core:$corda_release_version"
- *      cordaCompile "$corda_release_group:chat-flows:$corda_chat_release_version"
+ *
+ *      cordapp "$tokens_release_group:tokens-contracts:$tokens_release_version"
+ *      cordapp "$tokens_release_group:tokens-workflows:$tokens_release_version"
+ *      cordapp "$tokens_release_group:tokens-selection:$tokens_release_version"
+ *      cordapp "$tokens_release_group:tokens-money:$tokens_release_version"
+ *      cordapp "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
+ *
+ *      cordapp "$corda_release_group:chat-flows:$corda_chat_release_version"
+ *      cordapp "$corda_release_group:chat-contracts:$corda_chat_release_version"
  *
  *  And import package and classes you may use.
  *
@@ -28,29 +36,29 @@ class ChatRPCWrapper() {
      * Here are some examples showing how you'd access Chat SDK.
      * Similarly you'd implement all of the other API calls.
      */
-    fun createChat(subject: String, content: String, receivers: List<Party>): ChatInfo =
+    fun createSession(subject: String, content: String, receivers: List<Party>): ChatMessage =
         proxy.startFlow(
-                ::CreateChatFlow,
+                ::CreateSessionFlow,
                 subject,
                 content,
                 receivers
         ).returnValue.getOrThrow()
 
-    fun sendMessage(chatId: UniqueIdentifier, content: String): ChatInfo =
+    fun sendMessage(chatId: UniqueIdentifier, content: String): ChatMessage =
         val sendMessage = proxy.startFlow(
                 ::SendMessageFlow,
                 chatId,
                 content
         ).returnValue.getOrThrow()
-        return sendMessage.coreTransaction.outputStates.single() as ChatInfo
+        return sendMessage.state.data
     }
 
-    fun getAllChats(): List<StateAndRef<ChatInfo>> =
+    fun getAllChats(): List<StateAndRef<ChatMessage>> =
         proxy.startFlow(
                 ::AllChats
         ).returnValue.getOrThrow()
 
-    fun getChatAllMessages(chatId: UniqueIdentifier): List<StateAndRef<ChatInfo>> =
+    fun getChatAllMessages(chatId: UniqueIdentifier): List<StateAndRef<ChatMessage>> =
         proxy.startFlow(
                 ::ChatAllMessages,
                 chatId
