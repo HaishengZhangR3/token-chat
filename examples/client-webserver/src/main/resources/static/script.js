@@ -43,10 +43,11 @@ socket.onmessage = function(event) {
   let incomingMessage = event.data;
   var popupMsg = parseNotification(incomingMessage)
   showPopUp(popupMsg);
+  updateUIChatId();
 
   setTimeout(function(){
     refresh();
-  }, 1000);
+  }, 1500);
 };
 
 socket.onclose = event => console.log(`Closed ${event.code}`);
@@ -109,6 +110,17 @@ function showPopUp(message) {
   setTimeout(() => {
     bottomRightElm.removeChild(popupDiv);
   }, 5000);
+}
+
+function updateUIChatId(){
+    var id = document.getElementById("basicChatId")
+    id.value = chatLastUpdated
+
+    id = document.getElementById("updateChatId")
+    id.value = chatLastUpdated
+
+    id = document.getElementById("queryChatId")
+    id.value = chatLastUpdated
 }
 
 // server help function-->
