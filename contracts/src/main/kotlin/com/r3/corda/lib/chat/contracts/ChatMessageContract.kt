@@ -38,6 +38,10 @@ class ChatMessageContract : Contract {
                     "chatId/linearId in two states must be same."
                 }
 
+                val allParticipants = session.receivers + session.admin
+                require(allParticipants.contains(chatMessage.sender)) {"Message sender must be in the existing session receivers list."}
+                require(allParticipants.contains(chatMessage.holder)) {"Message holder must be in the existing session receivers list."}
+
                 val issuerKey = chatMessage.issuer.owningKey
                 val issueSigners = command.signers
 
