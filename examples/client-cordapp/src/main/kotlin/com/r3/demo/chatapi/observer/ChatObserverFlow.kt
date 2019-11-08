@@ -13,7 +13,6 @@ import net.corda.core.flows.FlowSession
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.unwrap
-import java.io.File
 
 @Suppress("UNCHECKED_CAST")
 @InitiatedBy(ChatNotifyFlow::class)
@@ -28,11 +27,6 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
         val (command, info) = otherSession.receive<List<Any>>().unwrap { it }
 
         println("${ourIdentity.name.organisation} got a notice from Chat SDK, ID: ${info}, cmd: $command")
-
-        val file = "/Users/haishengzhang/Documents/tmp/observer_${ourIdentity.name.organisation}.log"
-        File(file).appendText("${ourIdentity.name.organisation} got a notice.\n")
-        File(file).appendText("command: ${command}.\n")
-        File(file).appendText("info: ${info}.\n")
 
         val data = parseData(command = command as NotifyCommand, info = info as List<ContractState>)
         if (data.isNotEmpty()) {

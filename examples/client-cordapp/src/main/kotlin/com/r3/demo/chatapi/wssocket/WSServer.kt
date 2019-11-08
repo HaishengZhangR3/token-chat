@@ -8,7 +8,6 @@ import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import org.slf4j.Logger
-import java.io.File
 import java.net.InetSocketAddress
 import java.time.Instant
 import java.util.*
@@ -36,8 +35,6 @@ class WSService(val serviceHub: AppServiceHub) : SingletonSerializeAsToken() {
 }
 
 class WSServer : WebSocketServer {
-
-	private val file = "/Users/haishengzhang/Documents/tmp/observer${Instant.now()}.log"
 
 	companion object {
 		private val logger: Logger = loggerFor<WSServer>()
@@ -77,6 +74,6 @@ class WSServer : WebSocketServer {
 	}
 
 	private fun logIt(message: String){
-		File(file).appendText("web socket [${port}] log: $message")
+		logger.debug("web socket [${port}] log: $message")
 	}
 }
