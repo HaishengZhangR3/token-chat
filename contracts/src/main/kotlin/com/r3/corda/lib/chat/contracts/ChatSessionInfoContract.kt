@@ -49,6 +49,12 @@ class ChatSessionInfoContract : EvolvableTokenContract(), Contract {
 
         val output = tx.outputStates.single() as ChatSessionInfo
         checkChatInfo(output)
+
+        require(input.subject == output.subject) { "Subject must not change."}
+        require(input.created != output.created) { "Created time must change."}
+        require(input.admin == output.admin) { "Admin must not change."}
+        require(input.receivers.minus(output.receivers).isNotEmpty() || output.receivers.minus(input.receivers).isNotEmpty()) { " receivers list must change to new participants."}
+        require(input.status == output.status) { "Status must not change."}
     }
 
     override fun verify(tx: LedgerTransaction) {

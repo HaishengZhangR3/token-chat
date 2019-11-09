@@ -13,6 +13,7 @@ import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.utilities.unwrap
+import java.time.Instant
 
 @InitiatingFlow
 @StartableByService
@@ -31,6 +32,7 @@ class UpdateReceiversFlow(
 
         val newReceivers = session.receivers + toAdd - toRemove
         val newSession = session.copy(
+                created = Instant.now(),
                 receivers = newReceivers
         )
 
