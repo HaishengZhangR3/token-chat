@@ -11,13 +11,14 @@ import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.Vault.StateStatus
 import net.corda.core.node.services.queryBy
-import net.corda.core.node.services.vault.QueryCriteria
-import net.corda.core.node.services.vault.builder
+import net.corda.core.node.services.vault.*
 import net.corda.core.serialization.SingletonSerializeAsToken
 import java.util.*
 
 @CordaService
 class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToken() {
+
+    val MAX_RECORD_SIZE = DEFAULT_PAGE_SIZE * 10 // support 2000 messages for now.
 
     /*  find notary */
     fun notary() = serviceHub.networkMapCache.notaryIdentities.first()
@@ -30,7 +31,8 @@ class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToke
         val idGroup = builder { PersistentChatSessionInfo::created.min(groupByColumns = listOf(PersistentChatSessionInfo::identifier)) }
         val idGroupCriteria = QueryCriteria.VaultCustomQueryCriteria(idGroup)
         val chatInfos = serviceHub.vaultService.queryBy<ChatSessionInfo>(
-                criteria = QueryCriteria.LinearStateQueryCriteria(status = status).and(idGroupCriteria)
+                criteria = QueryCriteria.LinearStateQueryCriteria(status = status).and(idGroupCriteria),
+                paging = PageSpecification(DEFAULT_PAGE_NUM, MAX_RECORD_SIZE)
         )
 
         return chatInfos.otherResults.filterIsInstance<UUID>().distinct().map { UniqueIdentifier(id = it) }
@@ -39,7 +41,8 @@ class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToke
     // get all chat all messages
     fun getAllMessages(status: StateStatus = StateStatus.UNCONSUMED): List<StateAndRef<ChatMessage>> =
             serviceHub.vaultService.queryBy<ChatMessage>(
-                    criteria = QueryCriteria.VaultQueryCriteria(status = status)
+                    criteria = QueryCriteria.VaultQueryCriteria(status = status),
+                    paging = PageSpecification(DEFAULT_PAGE_NUM, MAX_RECORD_SIZE)
             ).states
 
     /* get chat level message information */
@@ -55,7 +58,8 @@ class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToke
 
     inline fun <reified T : LinearState> getVaultStates(chatId: UniqueIdentifier, status: StateStatus = StateStatus.UNCONSUMED): List<StateAndRef<T>> {
         val stateAndRefs = serviceHub.vaultService.queryBy<T>(
-                criteria = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(chatId), status = status))
+                criteria = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(chatId), status = status),
+                paging = PageSpecification(DEFAULT_PAGE_NUM, MAX_RECORD_SIZE))
         return stateAndRefs.states
     }
 
